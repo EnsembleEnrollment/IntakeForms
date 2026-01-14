@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Intake Form</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #60A5FA;
+            --primary-light: #93C5FD;
+            --primary-dark: #3B82F6;
+            --accent: #38BDF8;
+            --salmon: #FA8072;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F8F9FA;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --text-light: #A0AEC0;
+            --white: #FFFFFF;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-300: #DEE2E6;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 30px 0 rgba(0, 0, 0, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            padding: 2rem;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .form-header {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .form-header h1 {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .form-header h1 i { color: var(--primary); }
+
+        .form-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .offline-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .form-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i { color: var(--primary); }
+        .section-title i.salmon { color: var(--salmon); }
+
+        .section-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .form-group { margin-bottom: 1.5rem; }
+
+        .form-label {
+            display: block;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .form-label .required { color: var(--danger); margin-left: 0.25rem; }
+
+        .field-description {
+            display: block;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+            background: var(--gray-50);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--gray-50);
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        .form-textarea { resize: vertical; min-height: 100px; }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+        .rich-editor {
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--gray-50);
+            transition: all 0.2s ease;
+        }
+
+        .rich-editor:focus-within {
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        .rich-editor-toolbar {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            background: var(--gray-100);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .toolbar-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--gray-200);
+            background: var(--white);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--gray-50);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .rich-editor-content {
+            min-height: 100px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+            line-height: 1.6;
+            outline: none;
+        }
+
+        .rich-editor-content:empty:before {
+            content: attr(data-placeholder);
+            color: var(--text-light);
+            pointer-events: none;
+        }
+
+        .rich-editor-content.small { min-height: 60px; }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-info { flex: 1; }
+        .toggle-label { font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); }
+        .toggle-description { font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+        .toggle-switch { position: relative; width: 50px; height: 26px; flex-shrink: 0; margin-left: 1rem; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--gray-300);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
+
+        .conditional-fields {
+            display: none;
+            padding: 1rem;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .conditional-fields.show { display: block; }
+
+        .dynamic-list {
+            background: var(--gray-50);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .dynamic-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .dynamic-list-title { font-size: 0.9375rem; font-weight: 700; color: var(--text-primary); }
+        .dynamic-list-description { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 1rem; }
+
+        .dynamic-list-items { display: flex; flex-direction: column; gap: 0.75rem; }
+
+        .dynamic-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            background: var(--white);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .dynamic-item-content { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+
+        .dynamic-item-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+        .dynamic-item input, .dynamic-item textarea {
+            padding: 0.625rem 0.875rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: var(--gray-50);
+            font-family: inherit;
+        }
+
+        .dynamic-item input:focus, .dynamic-item textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+        }
+
+        .dynamic-item textarea { min-height: 60px; resize: vertical; }
+
+        .default-policy-item {
+            background: var(--white);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--gray-200);
+            border-left: 3px solid var(--salmon);
+            margin-bottom: 0.75rem;
+        }
+
+        .default-policy-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .default-policy-title i { color: var(--salmon); }
+
+        .default-policy-description {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            background: rgba(250, 128, 114, 0.08);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(96, 165, 250, 0.4); }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--text-primary);
+            border: 1.5px solid var(--gray-200);
+        }
+
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #34D399 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4); }
+
+        .btn-small { padding: 0.5rem 0.875rem; font-size: 0.8125rem; }
+
+        .remove-item-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .remove-item-btn:hover { background: var(--danger); color: white; }
+
+        .instrument-item {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .instrument-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .instrument-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .instrument-name i { color: var(--primary); }
+
+        .instrument-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+        .instrument-field textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: var(--gray-50);
+            font-family: inherit;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .instrument-field textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+        }
+
+        .instrument-field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.375rem;
+        }
+
+        .add-instrument-section { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+
+        .add-instrument-section input {
+            flex: 1;
+            padding: 0.625rem 1rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+
+        .add-instrument-section input:focus { outline: none; border-color: var(--primary); }
+
+        .action-buttons {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: sticky;
+            bottom: 1rem;
+        }
+
+        .action-buttons .btn { min-width: 180px; justify-content: center; }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 3000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast-icon { font-size: 1.25rem; }
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.error .toast-icon { color: var(--danger); }
+        .toast-message { font-size: 0.9375rem; color: var(--text-primary); font-weight: 500; }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .form-row, .form-row-3, .dynamic-item-row, .instrument-fields { grid-template-columns: 1fr; }
+            .action-buttons { flex-direction: column; }
+            .action-buttons .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-header">
+            <h1><i class="fas fa-building"></i> Ensemble Performing Arts</h1>
+            <h2 style="font-size: 1.25rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.5rem;">Studio Intake Form</h2>
+            <p>Fill out all studio information below. Once complete, export both the <strong>JSON file</strong> (for database import) and the <strong>PDF</strong> (for review), then email both files to your administrator.</p>
+            <div class="offline-badge">
+                <i class="fas fa-wifi-slash"></i> Works Offline
+            </div>
+        </div>
+
+        <!-- Basic Info Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-info-circle"></i> Basic Information</h2>
+            <p class="section-description">Core details about the studio location and general information that helps staff and customers find and understand this location.</p>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">City<span class="required">*</span></label>
+                    <span class="field-description">The city where this studio is located. This is used as the primary identifier for the studio.</span>
+                    <input type="text" class="form-input" id="studioCity" placeholder="e.g., Los Angeles" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">State</label>
+                    <span class="field-description">The state or province. You can use the full name or abbreviation.</span>
+                    <input type="text" class="form-input" id="studioState" placeholder="e.g., California or CA">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Time Zone</label>
+                <span class="field-description">The studio's time zone for scheduling purposes. Use standard IANA format (e.g., America/Los_Angeles) or common names.</span>
+                <input type="text" class="form-input" id="studioTimeZone" placeholder="e.g., America/Los_Angeles, Eastern, Pacific">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Location / Address</label>
+                <span class="field-description">Full street address including suite or unit number. This helps customers find the exact location.</span>
+                <input type="text" class="form-input" id="studioAddress" placeholder="e.g., 123 Main Street, Suite 100, Los Angeles, CA 90001">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Parking Details</label>
+                    <span class="field-description">Where can students and parents park? Include any validation requirements, time limits, or costs.</span>
+                    <input type="text" class="form-input" id="studioParking" placeholder="e.g., Front parking available in front of the building - Free">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Landmarks</label>
+                    <span class="field-description">Nearby landmarks or businesses that help people find the studio location.</span>
+                    <input type="text" class="form-input" id="studioLandmarks" placeholder="e.g., Close to the daybreak side of South Jordan, in the same parking lot as the Texas Roadhouse or Hoopes Vision">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">General Notes / Description</label>
+                <span class="field-description">General information about the studio - its history, unique features, room setup, anything staff or customers should know.</span>
+                <div class="rich-editor">
+                    <div class="rich-editor-toolbar">
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioDescription', 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioDescription', 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioDescription', 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                    </div>
+                    <div class="rich-editor-content" id="studioDescription" contenteditable="true" data-placeholder="Describe the studio - number of rooms, equipment available, building access, etc."></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Studio Summary / Vibe</label>
+                <span class="field-description">Describe the atmosphere and culture of this location. What's it like to walk in? Who are the typical students? What makes it special?</span>
+                <div class="rich-editor">
+                    <div class="rich-editor-toolbar">
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioSummaryVibe', 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioSummaryVibe', 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioSummaryVibe', 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                    </div>
+                    <div class="rich-editor-content" id="studioSummaryVibe" contenteditable="true" data-placeholder="e.g., Our lessons are welcoming, flexible, and built for every kind of student — beginners, returners, and everything in between. We meet students where they are, creating a fun, supportive environment where they can explore, make mistakes, and grow with a dedicated instructor. At our core, we're about making music accessible, engaging, and community-driven for all. 🎶"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Safety & Supervision Policies</label>
+                <span class="field-description">Describe your safety measures, supervision policies for minors, and how parents can be involved during lessons.</span>
+                <div class="rich-editor">
+                    <div class="rich-editor-toolbar">
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioSecurityNotes', 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioSecurityNotes', 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioSecurityNotes', 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                    </div>
+                    <div class="rich-editor-content" id="studioSecurityNotes" contenteditable="true" data-placeholder="e.g., We maintain an open-door policy with windows in every room door for added transparency. Parents are welcome to sit in on lessons, relax in the lobby, or drop off their student while they run errands. For additional safety and peace of mind, all lesson rooms are equipped with cameras."></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-phone"></i> Contact Information</h2>
+            <p class="section-description">How to reach the studio and who manages the day-to-day operations at this location.</p>
+            
+            <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <span class="field-description">Main studio phone number that students and parents can call for questions or emergencies.</span>
+                <input type="text" class="form-input" id="studioPhone" placeholder="e.g., (555) 123-4567">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Director Name</label>
+                    <span class="field-description">Name of the studio director or manager who oversees this location.</span>
+                    <input type="text" class="form-input" id="studioDirectorName" placeholder="e.g., Jane Smith">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Director Email</label>
+                    <span class="field-description">Email address for the studio director for professional communication.</span>
+                    <input type="email" class="form-input" id="studioDirectorEmail" placeholder="e.g., jane.smith@musicschool.com">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Scheduling Link</label>
+                    <span class="field-description">Link to book appointments, trial lessons, or consultations (Opus, Pike, etc.).</span>
+                    <input type="url" class="form-input" id="studioSchedulingLink" placeholder="e.g., https://calendly.com/studio-name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Admin Office Hours</label>
+                    <span class="field-description">When is an administrative staff member physically present at this location?</span>
+                    <input type="text" class="form-input" id="studioAdminHours" placeholder="e.g., Mon-Fri 9am-6pm, Sat 10am-2pm">
+                </div>
+            </div>
+            
+            <div class="dynamic-list">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title">Studio Admins</span>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addAdmin()">
+                        <i class="fas fa-plus"></i> Add Admin
+                    </button>
+                </div>
+                <p class="dynamic-list-description">Add other staff members who work at this location (front desk, assistant managers, etc.). Don't include the director here.</p>
+                <div id="adminsList" class="dynamic-list-items"></div>
+            </div>
+        </div>
+
+        <!-- Pricing Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-dollar-sign"></i> Pricing</h2>
+            <p class="section-description">Lesson rates and fees specific to this studio location. Pricing may vary by location based on local market conditions.</p>
+            
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label class="form-label">Monthly Rate (30-Min)</label>
+                    <span class="field-description">Monthly tuition for weekly 30-minute private lessons.</span>
+                    <input type="text" class="form-input" id="studioPrice30" placeholder="e.g., $150">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Monthly Rate (45-Min)</label>
+                    <span class="field-description">Monthly tuition for weekly 45-minute private lessons.</span>
+                    <input type="text" class="form-input" id="studioPrice45" placeholder="e.g., $200">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Monthly Rate (60-Min)</label>
+                    <span class="field-description">Monthly tuition for weekly 60-minute private lessons.</span>
+                    <input type="text" class="form-input" id="studioPrice60" placeholder="e.g., $250">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Annual Fee</label>
+                <span class="field-description">Yearly registration, materials, or administrative fee charged to students.</span>
+                <input type="text" class="form-input" id="studioAnnualFee" placeholder="e.g., $49">
+            </div>
+        </div>
+
+        <!-- Programs & Rentals Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-cog"></i> Programs & Rentals</h2>
+            <p class="section-description">Additional services and offerings available at this studio location beyond standard private lessons.</p>
+            
+            <div class="toggle-group">
+                <div class="toggle-info">
+                    <span class="toggle-label">Programs Available</span>
+                    <p class="toggle-description">Does this studio offer special programs like group classes, summer camps, workshops, ensembles, or other structured programs?</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="studioPrograms" onchange="toggleProgramsMessage()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div id="programsMessage" class="conditional-fields" style="background: rgba(96, 165, 250, 0.1); border-color: var(--primary);">
+                <p style="color: var(--primary); font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-info-circle"></i> Please fill out the Programs Form with program details for this location.
+                </p>
+            </div>
+            
+            <div class="toggle-group">
+                <div class="toggle-info">
+                    <span class="toggle-label">Instrument Rentals Available</span>
+                    <p class="toggle-description">Can students rent instruments from this location? Turn on to add rental details.</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="studioRentals" onchange="toggleRentalFields()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div id="rentalFields" class="conditional-fields">
+                <div class="form-group">
+                    <label class="form-label">Rental Notes</label>
+                    <span class="field-description">Details about the rental program - what instruments are available, pricing, rental terms, deposit requirements.</span>
+                    <div class="rich-editor">
+                        <div class="rich-editor-toolbar">
+                            <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioRentalInfo', 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                            <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioRentalInfo', 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                            <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('studioRentalInfo', 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                        </div>
+                        <div class="rich-editor-content small" id="studioRentalInfo" contenteditable="true" data-placeholder="e.g., Guitars and violins available starting at $25/month. 3-month minimum rental period. Rental fees apply toward purchase."></div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Rental Link</label>
+                    <span class="field-description">Link to rental information page, inventory list, or rental application form.</span>
+                    <input type="url" class="form-input" id="studioRentalLink" placeholder="e.g., https://musicschool.com/rentals">
+                </div>
+            </div>
+        </div>
+
+        <!-- Discounts Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-tags"></i> Discounts & Subscriptions</h2>
+            <p class="section-description">Special offers, family discounts, subscription packages, referral bonuses, and promotional pricing available at this location.</p>
+            
+            <div class="dynamic-list">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title">Available Discounts</span>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addDiscount()">
+                        <i class="fas fa-plus"></i> Add Discount
+                    </button>
+                </div>
+                <p class="dynamic-list-description">Add any discounts or special pricing options: sibling discounts, multi-lesson packages, referral bonuses, military/teacher discounts, prepay discounts, etc.</p>
+                <div id="discountsList" class="dynamic-list-items"></div>
+            </div>
+        </div>
+
+        <!-- Customer Care Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-headset"></i> Customer Care</h2>
+            <p class="section-description">Support information for students and parents who need help with their account, scheduling, or have questions.</p>
+            
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <span class="field-description">Who handles customer care needs and day-to-day calls?</span>
+                <input type="text" class="form-input" id="customerCareTitle" placeholder="e.g., Customer Care Support Team, Studio Office Staff">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Notes <span style="font-weight: normal; color: var(--text-light);">(optional)</span></label>
+                <span class="field-description">Only add notes if needed - additional details about customer care at this location.</span>
+                <div class="rich-editor">
+                    <div class="rich-editor-toolbar">
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('customerCareNotes', 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('customerCareNotes', 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                        <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatText('customerCareNotes', 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                    </div>
+                    <div class="rich-editor-content" id="customerCareNotes" contenteditable="true" data-placeholder="e.g., Customer Care Support Team handles all customer care needs."></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scholarships Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-graduation-cap"></i> Scholarships</h2>
+            <p class="section-description">Financial assistance and scholarship programs available to help make music education accessible to all students.</p>
+            
+            <div class="dynamic-list">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title">Scholarship Programs</span>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addScholarship()">
+                        <i class="fas fa-plus"></i> Add Scholarship
+                    </button>
+                </div>
+                <p class="dynamic-list-description">Add any scholarship or financial aid programs available at this location. Include eligibility requirements, coverage amount, enrollment process, and how to apply.</p>
+                <div id="scholarshipsList" class="dynamic-list-items"></div>
+            </div>
+        </div>
+
+        <!-- Policies Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-file-alt salmon"></i> Policies</h2>
+            <p class="section-description">Studio policies that students and parents need to understand. Fill in all required policies, then add any custom policies specific to this location.</p>
+            
+            <div class="dynamic-list" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(250,128,114,0.05) 0%, rgba(250,128,114,0.02) 100%);">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title"><i class="fas fa-file-alt" style="color: var(--salmon); margin-right: 0.375rem;"></i> Required Policies</span>
+                </div>
+                <p class="dynamic-list-description">These 6 policies are required for every studio. Fill in the specific details for this location. Each policy has a description explaining what information to include.</p>
+                <div id="defaultPoliciesList"></div>
+            </div>
+            
+            <div class="dynamic-list">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title"><i class="fas fa-plus-circle" style="color: var(--primary); margin-right: 0.375rem;"></i> Custom Policies</span>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addCustomPolicy()">
+                        <i class="fas fa-plus"></i> Add Policy
+                    </button>
+                </div>
+                <p class="dynamic-list-description">Add any additional policies specific to this location that aren't covered by the required policies above (e.g., Recital Policy, Practice Room Usage, Dress Code).</p>
+                <div id="customPoliciesList" class="dynamic-list-items"></div>
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-sticky-note"></i> Notes</h2>
+            <p class="section-description">Additional notes and information that don't fit in other categories. Can be internal staff notes or information shared with customers.</p>
+            
+            <div class="dynamic-list">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title">Studio Notes</span>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addNote()">
+                        <i class="fas fa-plus"></i> Add Note
+                    </button>
+                </div>
+                <p class="dynamic-list-description">Add miscellaneous notes - internal reminders or anything else relevant to this studio.</p>
+                <div id="notesList" class="dynamic-list-items"></div>
+            </div>
+        </div>
+
+        <!-- Instruments Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-music"></i> Instruments</h2>
+            <p class="section-description">What instruments are taught at this location? List all instruments offered, along with any specific notes or required materials for each.</p>
+            
+            <div class="dynamic-list">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title">Instruments Offered</span>
+                </div>
+                <p class="dynamic-list-description">Add all instruments taught at this studio. For each instrument, you can specify teaching notes, age recommendations, required materials and course outlines.</p>
+                <div id="instrumentsList"></div>
+                <div class="add-instrument-section">
+                    <input type="text" id="newInstrument" placeholder="Type instrument name and press Enter (e.g., Piano, Guitar, Violin, Voice)">
+                    <button type="button" class="btn btn-primary btn-small" onclick="addInstrument()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Links Section -->
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-link"></i> Custom Links</h2>
+            <p class="section-description">Additional useful links for this studio - social media, maps, resources, and other external pages.</p>
+            
+            <div class="dynamic-list">
+                <div class="dynamic-list-header">
+                    <span class="dynamic-list-title">Studio Links</span>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addLink()">
+                        <i class="fas fa-plus"></i> Add Link
+                    </button>
+                </div>
+                <p class="dynamic-list-description">Add links to Google Maps directions, Facebook page, Instagram, scheduling portal, online store, student resources, or any other relevant pages.</p>
+                <div id="linksList" class="dynamic-list-items"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="clearForm()">
+                <i class="fas fa-trash"></i> Clear Form
+            </button>
+            <button class="btn btn-primary" onclick="exportJSON()">
+                <i class="fas fa-file-code"></i> Export JSON
+            </button>
+            <button class="btn btn-success" onclick="exportPDF()">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle toast-icon"></i>
+        <span class="toast-message"></span>
+    </div>
+
+    <script>
+        // Data arrays
+        let admins = [];
+        let instruments = [];
+        let links = [];
+        let scholarships = [];
+        let discounts = [];
+        let defaultPolicies = [];
+        let customPolicies = [];
+        let notes = [];
+
+        // Default policy definitions with descriptions
+        const DEFAULT_POLICY_DEFS = [
+            { 
+                key: 'lesson_cancellations', 
+                title: 'Lesson Cancellations',
+                description: 'How much advance notice is required to cancel? What is the makeup lesson policy? What happens if a student no-shows? Are there limits on makeups per month/semester?'
+            },
+            { 
+                key: 'billing', 
+                title: 'Billing',
+                description: 'Is the first month prorated? When is tuition due each month? What payment methods are accepted? Are there late fees? Is auto-pay available or required? What happens if payment fails?'
+            },
+            { 
+                key: 'trial_lesson', 
+                title: 'Trial Lesson',
+                description: 'Is a trial lesson available for new students? What is the cost (or is it free)? How long is it? What should the student bring or expect?'
+            },
+            { 
+                key: 'withdrawing', 
+                title: 'Withdrawing',
+                description: 'How much notice is required to withdraw/cancel enrollment? Are there any fees or refund policies? What is the process for ending lessons?'
+            },
+            { 
+                key: 'registration', 
+                title: 'Registration',
+                description: 'What is the enrollment process? Are there registration fees? What documents or information are needed? Is there a waitlist policy?'
+            },
+            { 
+                key: 'online_lessons', 
+                title: 'Online Lessons',
+                description: 'Are virtual/online lessons available? What platform is used (Zoom, FaceTime, etc.)? Any special requirements or policies for online students?'
+            }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initDefaultPolicies();
+            renderAll();
+            setupInstrumentInput();
+        });
+
+        function initDefaultPolicies() {
+            defaultPolicies = DEFAULT_POLICY_DEFS.map(def => ({
+                policy_type: 'default',
+                policy_key: def.key,
+                title: def.title,
+                description: def.description,
+                subtitle: '',
+                link: '',
+                notes: ''
+            }));
+        }
+
+        function setupInstrumentInput() {
+            document.getElementById('newInstrument').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addInstrument();
+                }
+            });
+        }
+
+        function renderAll() {
+            renderAdmins();
+            renderInstruments();
+            renderLinks();
+            renderScholarships();
+            renderDiscounts();
+            renderDefaultPolicies();
+            renderCustomPolicies();
+            renderNotes();
+        }
+
+        function formatText(editorId, command) {
+            const editor = document.getElementById(editorId);
+            editor.focus();
+            document.execCommand(command, false, null);
+        }
+
+        function formatTextDynamic(element, command) {
+            element.focus();
+            document.execCommand(command, false, null);
+        }
+
+        function toggleRentalFields() {
+            const checkbox = document.getElementById('studioRentals');
+            const fields = document.getElementById('rentalFields');
+            fields.classList.toggle('show', checkbox.checked);
+        }
+
+        function toggleProgramsMessage() {
+            const checkbox = document.getElementById('studioPrograms');
+            const message = document.getElementById('programsMessage');
+            message.classList.toggle('show', checkbox.checked);
+        }
+
+        // ADMINS
+        function addAdmin() {
+            admins.push({ name: '', email: '' });
+            renderAdmins();
+        }
+
+        function removeAdmin(index) {
+            admins.splice(index, 1);
+            renderAdmins();
+        }
+
+        function updateAdmin(index, field, value) {
+            admins[index][field] = value;
+        }
+
+        function renderAdmins() {
+            const container = document.getElementById('adminsList');
+            if (admins.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); font-size: 0.875rem; text-align: center; padding: 0.5rem;">No additional admins added yet.</p>';
+                return;
+            }
+            container.innerHTML = admins.map((admin, i) => `
+                <div class="dynamic-item">
+                    <div class="dynamic-item-content">
+                        <div class="dynamic-item-row">
+                            <input type="text" placeholder="Name" value="${admin.name || ''}" onchange="updateAdmin(${i}, 'name', this.value)">
+                            <input type="email" placeholder="Email" value="${admin.email || ''}" onchange="updateAdmin(${i}, 'email', this.value)">
+                        </div>
+                    </div>
+                    <button type="button" class="remove-item-btn" onclick="removeAdmin(${i})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // DISCOUNTS
+        function addDiscount() {
+            discounts.push({ title: '', description: '', link: '' });
+            renderDiscounts();
+        }
+
+        function removeDiscount(index) {
+            discounts.splice(index, 1);
+            renderDiscounts();
+        }
+
+        function updateDiscount(index, field, value) {
+            discounts[index][field] = value;
+        }
+
+        function renderDiscounts() {
+            const container = document.getElementById('discountsList');
+            if (discounts.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); font-size: 0.875rem; text-align: center; padding: 0.5rem;">No discounts added yet.</p>';
+                return;
+            }
+            container.innerHTML = discounts.map((d, i) => `
+                <div class="dynamic-item">
+                    <div class="dynamic-item-content">
+                        <input type="text" placeholder="Discount name (e.g., Sibling Discount, Prepay 10% Off)" value="${d.title || ''}" onchange="updateDiscount(${i}, 'title', this.value)" style="margin-bottom: 0.5rem;">
+                        <textarea placeholder="Description - who qualifies, discount amount, any restrictions or conditions" onchange="updateDiscount(${i}, 'description', this.value)">${d.description || ''}</textarea>
+                        <input type="url" placeholder="Link for more info or to sign up (optional)" value="${d.link || ''}" onchange="updateDiscount(${i}, 'link', this.value)" style="margin-top: 0.5rem;">
+                    </div>
+                    <button type="button" class="remove-item-btn" onclick="removeDiscount(${i})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // INSTRUMENTS
+        function addInstrument() {
+            const input = document.getElementById('newInstrument');
+            const name = input.value.trim();
+            if (!name) return;
+            if (instruments.some(i => i.name.toLowerCase() === name.toLowerCase())) {
+                showToast('Instrument already added', 'error');
+                return;
+            }
+            instruments.push({ name, notes: '', materials: '' });
+            input.value = '';
+            renderInstruments();
+        }
+
+        function removeInstrument(index) {
+            instruments.splice(index, 1);
+            renderInstruments();
+        }
+
+        function updateInstrument(index, field, value) {
+            instruments[index][field] = value;
+        }
+
+        function renderInstruments() {
+            const container = document.getElementById('instrumentsList');
+            if (instruments.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); font-size: 0.875rem; text-align: center; padding: 0.5rem;">No instruments added yet. Use the field below to add instruments.</p>';
+                return;
+            }
+            container.innerHTML = instruments.map((inst, i) => `
+                <div class="instrument-item">
+                    <div class="instrument-item-header">
+                        <span class="instrument-name"><i class="fas fa-music"></i> ${inst.name}</span>
+                        <button type="button" class="remove-item-btn" onclick="removeInstrument(${i})"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="instrument-fields">
+                        <div class="instrument-field">
+                            <label>Notes (Age recommendation)</label>
+                            <textarea placeholder="e.g., 6+" onchange="updateInstrument(${i}, 'notes', this.value)">${inst.notes || ''}</textarea>
+                        </div>
+                        <div class="instrument-field">
+                            <label>Required Materials</label>
+                            <textarea placeholder="e.g., Books are available for purchase after first lesson through the front desk. Range from $60-$90 per semester." onchange="updateInstrument(${i}, 'materials', this.value)">${inst.materials || ''}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // LINKS
+        function addLink() {
+            links.push({ header: '', subheader: '', url: '' });
+            renderLinks();
+        }
+
+        function removeLink(index) {
+            links.splice(index, 1);
+            renderLinks();
+        }
+
+        function updateLink(index, field, value) {
+            links[index][field] = value;
+        }
+
+        function renderLinks() {
+            const container = document.getElementById('linksList');
+            if (links.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); font-size: 0.875rem; text-align: center; padding: 0.5rem;">No links added yet.</p>';
+                return;
+            }
+            container.innerHTML = links.map((link, i) => `
+                <div class="dynamic-item">
+                    <div class="dynamic-item-content">
+                        <div class="dynamic-item-row">
+                            <input type="text" placeholder="Link title (e.g., Google Maps, Facebook)" value="${link.header || ''}" onchange="updateLink(${i}, 'header', this.value)">
+                            <input type="text" placeholder="Subtitle (e.g., Get directions, Follow us)" value="${link.subheader || ''}" onchange="updateLink(${i}, 'subheader', this.value)">
+                        </div>
+                        <input type="url" placeholder="URL (https://...)" value="${link.url || ''}" onchange="updateLink(${i}, 'url', this.value)">
+                    </div>
+                    <button type="button" class="remove-item-btn" onclick="removeLink(${i})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // SCHOLARSHIPS
+        function addScholarship() {
+            scholarships.push({ title: '', notes: '', link: '' });
+            renderScholarships();
+        }
+
+        function removeScholarship(index) {
+            scholarships.splice(index, 1);
+            renderScholarships();
+        }
+
+        function updateScholarship(index, field, value) {
+            scholarships[index][field] = value;
+        }
+
+        function renderScholarships() {
+            const container = document.getElementById('scholarshipsList');
+            if (scholarships.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); font-size: 0.875rem; text-align: center; padding: 0.5rem;">No scholarships added yet.</p>';
+                return;
+            }
+            container.innerHTML = scholarships.map((s, i) => `
+                <div class="dynamic-item">
+                    <div class="dynamic-item-content">
+                        <input type="text" placeholder="Scholarship name (e.g., Need-Based Music Scholarship)" value="${s.title || ''}" onchange="updateScholarship(${i}, 'title', this.value)" style="margin-bottom: 0.5rem;">
+                        <div class="rich-editor" style="margin-bottom: 0.5rem;">
+                            <div class="rich-editor-toolbar">
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                            </div>
+                            <div class="rich-editor-content small" contenteditable="true" data-placeholder="Eligibility requirements, coverage amount, enrollment process, how to apply..." oninput="updateScholarship(${i}, 'notes', this.innerHTML)">${s.notes || ''}</div>
+                        </div>
+                        <input type="url" placeholder="Application or info link (optional)" value="${s.link || ''}" onchange="updateScholarship(${i}, 'link', this.value)">
+                    </div>
+                    <button type="button" class="remove-item-btn" onclick="removeScholarship(${i})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // DEFAULT POLICIES
+        function updateDefaultPolicy(index, field, value) {
+            defaultPolicies[index][field] = value;
+        }
+
+        function renderDefaultPolicies() {
+            const container = document.getElementById('defaultPoliciesList');
+            container.innerHTML = defaultPolicies.map((policy, i) => `
+                <div class="default-policy-item">
+                    <div class="default-policy-title">
+                        <i class="fas fa-file-alt"></i> ${policy.title}
+                    </div>
+                    <p class="default-policy-description">${policy.description}</p>
+                    <div class="dynamic-item-row" style="margin-bottom: 0.5rem;">
+                        <input type="text" placeholder="Subtitle (optional)" value="${policy.subtitle || ''}" onchange="updateDefaultPolicy(${i}, 'subtitle', this.value)" style="padding: 0.625rem 0.875rem; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 0.875rem; background: var(--gray-50);">
+                        <input type="url" placeholder="Link to full policy document (optional)" value="${policy.link || ''}" onchange="updateDefaultPolicy(${i}, 'link', this.value)" style="padding: 0.625rem 0.875rem; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 0.875rem; background: var(--gray-50);">
+                    </div>
+                    <div class="rich-editor">
+                        <div class="rich-editor-toolbar">
+                            <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                            <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                            <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                        </div>
+                        <div class="rich-editor-content small" contenteditable="true" data-placeholder="Enter the policy details for this studio..." oninput="updateDefaultPolicy(${i}, 'notes', this.innerHTML)">${policy.notes || ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // CUSTOM POLICIES
+        function addCustomPolicy() {
+            customPolicies.push({ title: '', subtitle: '', link: '', notes: '' });
+            renderCustomPolicies();
+        }
+
+        function removeCustomPolicy(index) {
+            customPolicies.splice(index, 1);
+            renderCustomPolicies();
+        }
+
+        function updateCustomPolicy(index, field, value) {
+            customPolicies[index][field] = value;
+        }
+
+        function renderCustomPolicies() {
+            const container = document.getElementById('customPoliciesList');
+            if (customPolicies.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); font-size: 0.875rem; text-align: center; padding: 0.5rem;">No custom policies added yet.</p>';
+                return;
+            }
+            container.innerHTML = customPolicies.map((p, i) => `
+                <div class="dynamic-item">
+                    <div class="dynamic-item-content">
+                        <div class="dynamic-item-row">
+                            <input type="text" placeholder="Policy title (e.g., Recital Policy)" value="${p.title || ''}" onchange="updateCustomPolicy(${i}, 'title', this.value)">
+                            <input type="text" placeholder="Subtitle (optional)" value="${p.subtitle || ''}" onchange="updateCustomPolicy(${i}, 'subtitle', this.value)">
+                        </div>
+                        <input type="url" placeholder="Link to full policy (optional)" value="${p.link || ''}" onchange="updateCustomPolicy(${i}, 'link', this.value)" style="margin: 0.5rem 0;">
+                        <div class="rich-editor">
+                            <div class="rich-editor-toolbar">
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                            </div>
+                            <div class="rich-editor-content small" contenteditable="true" data-placeholder="Policy details..." oninput="updateCustomPolicy(${i}, 'notes', this.innerHTML)">${p.notes || ''}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="remove-item-btn" onclick="removeCustomPolicy(${i})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // NOTES
+        function addNote() {
+            notes.push({ title: '', subtitle: '', notes: '', link: '' });
+            renderNotes();
+        }
+
+        function removeNote(index) {
+            notes.splice(index, 1);
+            renderNotes();
+        }
+
+        function updateNote(index, field, value) {
+            notes[index][field] = value;
+        }
+
+        function renderNotes() {
+            const container = document.getElementById('notesList');
+            if (notes.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light); font-size: 0.875rem; text-align: center; padding: 0.5rem;">No notes added yet.</p>';
+                return;
+            }
+            container.innerHTML = notes.map((n, i) => `
+                <div class="dynamic-item">
+                    <div class="dynamic-item-content">
+                        <div class="dynamic-item-row">
+                            <input type="text" placeholder="Note title (e.g., Holiday Schedule)" value="${n.title || ''}" onchange="updateNote(${i}, 'title', this.value)">
+                            <input type="text" placeholder="Subtitle (optional)" value="${n.subtitle || ''}" onchange="updateNote(${i}, 'subtitle', this.value)">
+                        </div>
+                        <div class="rich-editor" style="margin: 0.5rem 0;">
+                            <div class="rich-editor-toolbar">
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                                <button type="button" class="toolbar-btn" onmousedown="event.preventDefault()" onclick="formatTextDynamic(this.closest('.rich-editor').querySelector('.rich-editor-content'), 'underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                            </div>
+                            <div class="rich-editor-content small" contenteditable="true" data-placeholder="Note details..." oninput="updateNote(${i}, 'notes', this.innerHTML)">${n.notes || ''}</div>
+                        </div>
+                        <input type="url" placeholder="Related link (optional)" value="${n.link || ''}" onchange="updateNote(${i}, 'link', this.value)">
+                    </div>
+                    <button type="button" class="remove-item-btn" onclick="removeNote(${i})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // EXPORT
+        function exportJSON() {
+            const city = document.getElementById('studioCity').value.trim();
+            if (!city) {
+                showToast('City is required', 'error');
+                return;
+            }
+
+            const allPolicies = [
+                ...defaultPolicies.map(p => ({
+                    policy_type: 'default',
+                    policy_key: p.policy_key,
+                    title: p.title,
+                    subtitle: p.subtitle,
+                    link: p.link,
+                    notes: p.notes
+                })),
+                ...customPolicies.filter(p => p.title || p.notes).map(p => ({
+                    policy_type: 'custom',
+                    title: p.title,
+                    subtitle: p.subtitle,
+                    link: p.link,
+                    notes: p.notes
+                }))
+            ];
+
+            const data = {
+                _version: '2.0',
+                _exportedAt: new Date().toISOString(),
+                studio: {
+                    city: city,
+                    state: document.getElementById('studioState').value || null,
+                    time_zone: document.getElementById('studioTimeZone').value || null,
+                    address: document.getElementById('studioAddress').value || null,
+                    parking: document.getElementById('studioParking').value || null,
+                    landmarks: document.getElementById('studioLandmarks').value || null,
+                    general_notes: document.getElementById('studioDescription').innerHTML || null,
+                    summary_vibe: document.getElementById('studioSummaryVibe').innerHTML || null,
+                    security_notes: document.getElementById('studioSecurityNotes').innerHTML || null,
+                    phone_number: document.getElementById('studioPhone').value || null,
+                    director_name: document.getElementById('studioDirectorName').value || null,
+                    director_email: document.getElementById('studioDirectorEmail').value || null,
+                    scheduling_link: document.getElementById('studioSchedulingLink').value || null,
+                    admin_office_hours: document.getElementById('studioAdminHours').value || null,
+                    monthly_rate: document.getElementById('studioPrice30').value || null,
+                    price_45: document.getElementById('studioPrice45').value || null,
+                    price_60: document.getElementById('studioPrice60').value || null,
+                    annual_fee: document.getElementById('studioAnnualFee').value || null,
+                    programs_enabled: document.getElementById('studioPrograms').checked,
+                    rentals_enabled: document.getElementById('studioRentals').checked,
+                    rental_info: document.getElementById('studioRentalInfo').innerHTML || null,
+                    rental_link: document.getElementById('studioRentalLink').value || null,
+                    customer_care_title: document.getElementById('customerCareTitle').value || null,
+                    customer_care_notes: document.getElementById('customerCareNotes').innerHTML || null
+                },
+                admins: admins.filter(a => a.name || a.email),
+                instruments: instruments.filter(i => i.name),
+                links: links.filter(l => l.header || l.url),
+                scholarships: scholarships.filter(s => s.title || s.notes),
+                discounts: discounts.filter(d => d.title),
+                policies: allPolicies,
+                notes: notes.filter(n => n.title || n.notes)
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `studio-${city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('JSON exported successfully!', 'success');
+        }
+
+        // PDF EXPORT
+        function exportPDF() {
+            const city = document.getElementById('studioCity').value.trim();
+            if (!city) {
+                showToast('City is required', 'error');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            let y = 20;
+            const leftMargin = 20;
+            const pageWidth = 170;
+            const lineHeight = 7;
+            
+            // Helper functions
+            function addTitle(text) {
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(96, 165, 250);
+                doc.text(text, leftMargin, y);
+                y += 10;
+            }
+            
+            function addSectionHeader(text) {
+                checkPageBreak(20);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(45, 55, 72);
+                doc.text(text, leftMargin, y);
+                y += 2;
+                doc.setDrawColor(96, 165, 250);
+                doc.setLineWidth(0.5);
+                doc.line(leftMargin, y, leftMargin + pageWidth, y);
+                y += 8;
+            }
+            
+            function addField(label, value) {
+                if (!value || value === 'null') return;
+                checkPageBreak(15);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(113, 128, 150);
+                doc.text(label + ':', leftMargin, y);
+                y += 5;
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(45, 55, 72);
+                const cleanValue = stripHtml(value);
+                const lines = doc.splitTextToSize(cleanValue, pageWidth);
+                lines.forEach(line => {
+                    checkPageBreak(7);
+                    doc.text(line, leftMargin, y);
+                    y += lineHeight;
+                });
+                y += 2;
+            }
+            
+            function addRichTextField(label, value) {
+                if (!value || value === 'null' || value.trim() === '') return;
+                checkPageBreak(15);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(113, 128, 150);
+                doc.text(label + ':', leftMargin, y);
+                y += 5;
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(45, 55, 72);
+                const cleanValue = stripHtml(value);
+                const lines = doc.splitTextToSize(cleanValue, pageWidth);
+                lines.forEach(line => {
+                    checkPageBreak(7);
+                    doc.text(line, leftMargin, y);
+                    y += lineHeight;
+                });
+                y += 2;
+            }
+            
+            function stripHtml(html) {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                return tmp.textContent || tmp.innerText || '';
+            }
+            
+            function checkPageBreak(needed) {
+                if (y + needed > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+            }
+            
+            function addListItem(text, indent = 0) {
+                checkPageBreak(10);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(45, 55, 72);
+                const lines = doc.splitTextToSize(text, pageWidth - indent);
+                lines.forEach((line, i) => {
+                    checkPageBreak(7);
+                    if (i === 0) {
+                        doc.text('•', leftMargin + indent, y);
+                        doc.text(line, leftMargin + indent + 5, y);
+                    } else {
+                        doc.text(line, leftMargin + indent + 5, y);
+                    }
+                    y += lineHeight;
+                });
+            }
+            
+            // Title
+            addTitle('Studio Intake Form');
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(113, 128, 150);
+            doc.text('Exported: ' + new Date().toLocaleString(), leftMargin, y);
+            y += 15;
+            
+            // Basic Information
+            addSectionHeader('Basic Information');
+            addField('City', document.getElementById('studioCity').value);
+            addField('State', document.getElementById('studioState').value);
+            addField('Time Zone', document.getElementById('studioTimeZone').value);
+            addField('Address', document.getElementById('studioAddress').value);
+            addField('Parking', document.getElementById('studioParking').value);
+            addField('Landmarks', document.getElementById('studioLandmarks').value);
+            addRichTextField('General Notes', document.getElementById('studioDescription').innerHTML);
+            addRichTextField('Studio Summary / Vibe', document.getElementById('studioSummaryVibe').innerHTML);
+            addRichTextField('Safety & Supervision', document.getElementById('studioSecurityNotes').innerHTML);
+            
+            // Contact Information
+            addSectionHeader('Contact Information');
+            addField('Phone', document.getElementById('studioPhone').value);
+            addField('Director Name', document.getElementById('studioDirectorName').value);
+            addField('Director Email', document.getElementById('studioDirectorEmail').value);
+            addField('Scheduling Link', document.getElementById('studioSchedulingLink').value);
+            addField('Admin Office Hours', document.getElementById('studioAdminHours').value);
+            
+            if (admins.filter(a => a.name).length > 0) {
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(113, 128, 150);
+                checkPageBreak(10);
+                doc.text('Studio Admins:', leftMargin, y);
+                y += 5;
+                admins.filter(a => a.name).forEach(admin => {
+                    addListItem(`${admin.name}${admin.email ? ' - ' + admin.email : ''}`);
+                });
+                y += 3;
+            }
+            
+            // Pricing
+            addSectionHeader('Pricing');
+            addField('Monthly Rate (30-Min)', document.getElementById('studioPrice30').value);
+            addField('Monthly Rate (45-Min)', document.getElementById('studioPrice45').value);
+            addField('Monthly Rate (60-Min)', document.getElementById('studioPrice60').value);
+            addField('Annual Fee', document.getElementById('studioAnnualFee').value);
+            
+            // Programs & Rentals
+            addSectionHeader('Programs & Rentals');
+            addField('Programs Available', document.getElementById('studioPrograms').checked ? 'Yes' : 'No');
+            addField('Rentals Available', document.getElementById('studioRentals').checked ? 'Yes' : 'No');
+            if (document.getElementById('studioRentals').checked) {
+                addRichTextField('Rental Notes', document.getElementById('studioRentalInfo').innerHTML);
+                addField('Rental Link', document.getElementById('studioRentalLink').value);
+            }
+            
+            // Discounts
+            if (discounts.filter(d => d.title).length > 0) {
+                addSectionHeader('Discounts & Subscriptions');
+                discounts.filter(d => d.title).forEach(discount => {
+                    checkPageBreak(20);
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(45, 55, 72);
+                    doc.text(discount.title, leftMargin, y);
+                    y += 6;
+                    if (discount.description) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        const lines = doc.splitTextToSize(discount.description, pageWidth);
+                        lines.forEach(line => {
+                            checkPageBreak(7);
+                            doc.text(line, leftMargin, y);
+                            y += lineHeight;
+                        });
+                    }
+                    if (discount.link) {
+                        doc.setTextColor(96, 165, 250);
+                        doc.text(discount.link, leftMargin, y);
+                        y += lineHeight;
+                        doc.setTextColor(45, 55, 72);
+                    }
+                    y += 3;
+                });
+            }
+            
+            // Customer Care
+            addSectionHeader('Customer Care');
+            addField('Title', document.getElementById('customerCareTitle').value);
+            addRichTextField('Notes', document.getElementById('customerCareNotes').innerHTML);
+            
+            // Scholarships
+            if (scholarships.filter(s => s.title).length > 0) {
+                addSectionHeader('Scholarships');
+                scholarships.filter(s => s.title).forEach(scholarship => {
+                    checkPageBreak(20);
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(45, 55, 72);
+                    doc.text(scholarship.title, leftMargin, y);
+                    y += 6;
+                    if (scholarship.notes) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        const lines = doc.splitTextToSize(stripHtml(scholarship.notes), pageWidth);
+                        lines.forEach(line => {
+                            checkPageBreak(7);
+                            doc.text(line, leftMargin, y);
+                            y += lineHeight;
+                        });
+                    }
+                    if (scholarship.link) {
+                        doc.setTextColor(96, 165, 250);
+                        doc.text(scholarship.link, leftMargin, y);
+                        y += lineHeight;
+                        doc.setTextColor(45, 55, 72);
+                    }
+                    y += 3;
+                });
+            }
+            
+            // Policies
+            addSectionHeader('Policies');
+            
+            // Default policies
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(250, 128, 114);
+            checkPageBreak(10);
+            doc.text('Required Policies:', leftMargin, y);
+            y += 7;
+            
+            defaultPolicies.forEach(policy => {
+                checkPageBreak(25);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(45, 55, 72);
+                doc.text(policy.title, leftMargin, y);
+                y += 6;
+                if (policy.subtitle) {
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'italic');
+                    doc.setTextColor(113, 128, 150);
+                    doc.text(policy.subtitle, leftMargin, y);
+                    y += 6;
+                }
+                if (policy.notes) {
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(45, 55, 72);
+                    const lines = doc.splitTextToSize(stripHtml(policy.notes), pageWidth);
+                    lines.forEach(line => {
+                        checkPageBreak(7);
+                        doc.text(line, leftMargin, y);
+                        y += lineHeight;
+                    });
+                }
+                if (policy.link) {
+                    doc.setTextColor(96, 165, 250);
+                    doc.text(policy.link, leftMargin, y);
+                    y += lineHeight;
+                    doc.setTextColor(45, 55, 72);
+                }
+                y += 4;
+            });
+            
+            // Custom policies
+            if (customPolicies.filter(p => p.title).length > 0) {
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(96, 165, 250);
+                checkPageBreak(10);
+                doc.text('Custom Policies:', leftMargin, y);
+                y += 7;
+                
+                customPolicies.filter(p => p.title).forEach(policy => {
+                    checkPageBreak(20);
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(45, 55, 72);
+                    doc.text(policy.title, leftMargin, y);
+                    y += 6;
+                    if (policy.subtitle) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'italic');
+                        doc.setTextColor(113, 128, 150);
+                        doc.text(policy.subtitle, leftMargin, y);
+                        y += 6;
+                    }
+                    if (policy.notes) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(45, 55, 72);
+                        const lines = doc.splitTextToSize(stripHtml(policy.notes), pageWidth);
+                        lines.forEach(line => {
+                            checkPageBreak(7);
+                            doc.text(line, leftMargin, y);
+                            y += lineHeight;
+                        });
+                    }
+                    if (policy.link) {
+                        doc.setTextColor(96, 165, 250);
+                        doc.text(policy.link, leftMargin, y);
+                        y += lineHeight;
+                    }
+                    y += 4;
+                });
+            }
+            
+            // Notes
+            if (notes.filter(n => n.title).length > 0) {
+                addSectionHeader('Notes');
+                notes.filter(n => n.title).forEach(note => {
+                    checkPageBreak(20);
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(45, 55, 72);
+                    doc.text(note.title, leftMargin, y);
+                    y += 6;
+                    if (note.subtitle) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'italic');
+                        doc.setTextColor(113, 128, 150);
+                        doc.text(note.subtitle, leftMargin, y);
+                        y += 6;
+                    }
+                    if (note.notes) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(45, 55, 72);
+                        const lines = doc.splitTextToSize(stripHtml(note.notes), pageWidth);
+                        lines.forEach(line => {
+                            checkPageBreak(7);
+                            doc.text(line, leftMargin, y);
+                            y += lineHeight;
+                        });
+                    }
+                    if (note.link) {
+                        doc.setTextColor(96, 165, 250);
+                        doc.text(note.link, leftMargin, y);
+                        y += lineHeight;
+                    }
+                    y += 4;
+                });
+            }
+            
+            // Instruments
+            if (instruments.length > 0) {
+                addSectionHeader('Instruments Offered');
+                instruments.forEach(inst => {
+                    checkPageBreak(20);
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(45, 55, 72);
+                    doc.text(inst.name, leftMargin, y);
+                    y += 6;
+                    if (inst.notes) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(113, 128, 150);
+                        doc.text('Notes: ', leftMargin, y);
+                        doc.setTextColor(45, 55, 72);
+                        const lines = doc.splitTextToSize(inst.notes, pageWidth - 15);
+                        lines.forEach((line, i) => {
+                            checkPageBreak(7);
+                            doc.text(line, i === 0 ? leftMargin + 15 : leftMargin, y);
+                            y += lineHeight;
+                        });
+                    }
+                    if (inst.materials) {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(113, 128, 150);
+                        doc.text('Materials: ', leftMargin, y);
+                        doc.setTextColor(45, 55, 72);
+                        const lines = doc.splitTextToSize(inst.materials, pageWidth - 20);
+                        lines.forEach((line, i) => {
+                            checkPageBreak(7);
+                            doc.text(line, i === 0 ? leftMargin + 20 : leftMargin, y);
+                            y += lineHeight;
+                        });
+                    }
+                    y += 3;
+                });
+            }
+            
+            // Links
+            if (links.filter(l => l.header || l.url).length > 0) {
+                addSectionHeader('Custom Links');
+                links.filter(l => l.header || l.url).forEach(link => {
+                    checkPageBreak(15);
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(45, 55, 72);
+                    doc.text(link.header || 'Link', leftMargin, y);
+                    if (link.subheader) {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(113, 128, 150);
+                        doc.text(' - ' + link.subheader, leftMargin + doc.getTextWidth(link.header || 'Link'), y);
+                    }
+                    y += 6;
+                    if (link.url) {
+                        doc.setFontSize(10);
+                        doc.setTextColor(96, 165, 250);
+                        doc.text(link.url, leftMargin, y);
+                        y += lineHeight;
+                    }
+                    y += 2;
+                });
+            }
+            
+            // Save PDF
+            doc.save(`studio-${city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.pdf`);
+            showToast('PDF exported successfully!', 'success');
+        }
+
+        // CLEAR
+        function clearForm() {
+            if (!confirm('Clear all form data? This cannot be undone.')) return;
+
+            document.querySelectorAll('.form-input').forEach(input => input.value = '');
+            document.querySelectorAll('.rich-editor-content').forEach(editor => editor.innerHTML = '');
+            document.querySelectorAll('.toggle-switch input').forEach(toggle => toggle.checked = false);
+            document.getElementById('rentalFields').classList.remove('show');
+            document.getElementById('programsMessage').classList.remove('show');
+
+            admins = [];
+            instruments = [];
+            links = [];
+            scholarships = [];
+            discounts = [];
+            customPolicies = [];
+            notes = [];
+            
+            initDefaultPolicies();
+            renderAll();
+            showToast('Form cleared', 'success');
+        }
+
+        // TOAST
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = toast.querySelector('.toast-message');
+            const toastIcon = toast.querySelector('.toast-icon');
+            toast.className = 'toast ' + type;
+            toastMessage.textContent = message;
+            toastIcon.className = type === 'success' ? 'fas fa-check-circle toast-icon' : 'fas fa-exclamation-circle toast-icon';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
