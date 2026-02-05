@@ -56,6 +56,27 @@
         }
         .survey-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.375rem; }
         .survey-header p { font-size: 1rem; opacity: 0.9; }
+        .refresh-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 10px; padding: 0.75rem 1rem;
+            display: flex; align-items: center; gap: 0.625rem;
+            font-size: 0.8125rem; color: #92600A;
+            max-width: 720px; margin: 1rem auto 0; 
+        }
+        .refresh-warning i { color: var(--warning); flex-shrink: 0; }
+
+        /* Education toolbar */
+        .edu-toolbar {
+            display: flex; gap: 0.25rem; margin-bottom: 0.375rem;
+        }
+        .edu-toolbar-btn {
+            width: 34px; height: 34px; border: 1.5px solid var(--gray-200);
+            background: var(--white); color: var(--text-secondary); border-radius: 8px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 0.875rem; transition: all 0.2s;
+        }
+        .edu-toolbar-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(250, 128, 114, 0.05); }
 
         /* Container */
         .survey-container {
@@ -494,6 +515,10 @@
         <div class="survey-header-logo">EH</div>
         <h1>Teacher Information Survey</h1>
         <p>Please complete all sections so we can build your teacher profile</p>
+        <div class="refresh-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong>Important:</strong> Do not refresh or close this page while filling out the survey — all your progress will be lost.</span>
+        </div>
     </div>
 
     <div class="survey-container">
@@ -597,17 +622,23 @@
                 </label>
             </div>
             <div class="form-group">
-                <label class="form-label">Education Details</label>
-                <textarea class="form-textarea" id="educationDetails" placeholder="e.g., Bachelor of Music from Juilliard School, Master's in Music Performance from Berklee..."></textarea>
-                <div class="form-hint">Degrees, certifications, and notable training</div>
+                <label class="form-label">Education Details <span class="required">*</span></label>
+                <div class="edu-toolbar">
+                    <button type="button" class="edu-toolbar-btn" onclick="insertBullet()" title="Add bullet point"><i class="fas fa-list-ul"></i></button>
+                </div>
+                <textarea class="form-textarea" id="educationDetails" placeholder="• Bachelor of Music from Juilliard School&#10;• Master's in Music Performance from Berklee&#10;• 10+ years private teaching experience"></textarea>
+                <div class="form-hint">Degrees, certifications, and notable training. Use the bullet button or type • to add bullet points.</div>
+                <div class="form-error" id="educationDetailsError">Education details are required</div>
             </div>
             <div class="form-group">
-                <label class="form-label">Teaching Strength 1</label>
+                <label class="form-label">Teaching Strength 1 <span class="required">*</span></label>
                 <input type="text" class="form-input" id="strength1" placeholder="e.g., Patient with beginners">
+                <div class="form-error" id="strength1Error">Teaching strength 1 is required</div>
             </div>
             <div class="form-group">
-                <label class="form-label">Teaching Strength 2</label>
+                <label class="form-label">Teaching Strength 2 <span class="required">*</span></label>
                 <input type="text" class="form-input" id="strength2" placeholder="e.g., Strong classical technique">
+                <div class="form-error" id="strength2Error">Teaching strength 2 is required</div>
             </div>
             <div class="form-group">
                 <label class="form-label">Teaching Strength 3</label>
@@ -664,16 +695,11 @@
 
             <div class="form-group">
                 <label class="form-label">Cities Where You Teach <span class="required">*</span></label>
-                <div id="citiesContainer" class="tags-container">
-                    <span class="tags-placeholder">No cities added yet</span>
+                <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">Select all cities where you teach (based on your selected studio/brand)</div>
+                <div class="genre-grid" id="citiesCheckboxGrid">
+                    <span style="color: var(--text-light); font-size: 0.875rem; grid-column: 1/-1; text-align: center; padding: 1rem;">Select a studio/brand on the Basic Info page first</span>
                 </div>
-                <div class="form-error" id="citiesError">Please add at least one city</div>
-                <div class="add-row">
-                    <input type="text" id="newCity" placeholder="e.g., Salt Lake City">
-                    <button type="button" class="btn btn-primary btn-small" onclick="addCity()">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
-                </div>
+                <div class="form-error" id="citiesError">Please select at least one city</div>
             </div>
 
             <div class="form-group" style="margin-top: 1.5rem;">
@@ -699,11 +725,11 @@
         <!-- Step 5: Instruments -->
         <div class="step-card" id="step5">
             <h2 class="step-title">Instruments You Teach</h2>
-            <p class="step-subtitle">Add every instrument you teach — all fields are required for each one</p>
+            <p class="step-subtitle">Add every instrument you teach — fill in all required fields for each one</p>
 
             <div class="instrument-required-note">
                 <i class="fas fa-info-circle"></i>
-                <span>You must add <strong>at least one instrument</strong>, and <strong>all fields are required</strong> for each instrument you add.</span>
+                <span>You must add <strong>at least one instrument</strong>, and <strong>all fields marked with *</strong> are required for each instrument.</span>
             </div>
 
             <div id="instrumentsContainer"></div>
@@ -776,17 +802,21 @@
             updateProgress();
             loadBrandsAndStates();
 
-            document.getElementById('newCity').addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); addCity(); } });
             document.getElementById('newLanguage').addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); addLanguage(); } });
         });
 
         let allBrands = [];
+        let allStudios = [];
 
         async function loadBrandsAndStates() {
             try {
-                const result = await supabaseClient.from('brands').select('*').order('name');
-                if (result.error) throw result.error;
-                allBrands = result.data || [];
+                const [brandsResult, studiosResult] = await Promise.all([
+                    supabaseClient.from('brands').select('*').order('name'),
+                    supabaseClient.from('studio_directory').select('brand, city').order('city')
+                ]);
+                if (brandsResult.error) throw brandsResult.error;
+                allBrands = brandsResult.data || [];
+                allStudios = studiosResult.data || [];
 
                 // Populate states
                 const states = [...new Set(allBrands.map(b => b.state).filter(Boolean))].sort();
@@ -810,10 +840,51 @@
                     } else {
                         populateBrandDropdown(allBrands);
                     }
+                    // Reset cities when state changes
+                    cities = [];
+                    renderCityCheckboxes([]);
+                });
+
+                // When brand changes, load cities
+                document.getElementById('brand').addEventListener('change', () => {
+                    const selectedBrand = document.getElementById('brand').value;
+                    cities = [];
+                    if (selectedBrand) {
+                        const brandCities = [...new Set(
+                            allStudios.filter(s => s.brand === selectedBrand && s.city).map(s => s.city)
+                        )].sort();
+                        renderCityCheckboxes(brandCities);
+                    } else {
+                        renderCityCheckboxes([]);
+                    }
                 });
             } catch (error) {
                 console.error('Error loading brands:', error);
             }
+        }
+
+        function renderCityCheckboxes(cityList) {
+            const grid = document.getElementById('citiesCheckboxGrid');
+            if (cityList.length === 0) {
+                const brandVal = document.getElementById('brand').value;
+                grid.innerHTML = `<span style="color: var(--text-light); font-size: 0.875rem; grid-column: 1/-1; text-align: center; padding: 1rem;">${brandVal ? 'No cities found for this brand' : 'Select a studio/brand on the Basic Info page first'}</span>`;
+                return;
+            }
+            grid.innerHTML = cityList.map(c => {
+                const checked = cities.includes(c);
+                return `
+                    <div class="genre-checkbox ${checked ? 'selected' : ''}" onclick="toggleCityCheckbox(this, '${c.replace(/'/g, "\\'")}')">
+                        <span class="genre-check-icon"><i class="fas fa-check"></i></span>
+                        <span class="genre-label">${c}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleCityCheckbox(el, city) {
+            const idx = cities.indexOf(city);
+            if (idx === -1) { cities.push(city); el.classList.add('selected'); }
+            else { cities.splice(idx, 1); el.classList.remove('selected'); }
         }
 
         function populateBrandDropdown(brands) {
@@ -874,6 +945,19 @@
             fill.style.width = `${totalWidth * pct}px`;
         }
 
+        // ============ BULLET POINTS ============
+        function insertBullet() {
+            const ta = document.getElementById('educationDetails');
+            const start = ta.selectionStart;
+            const val = ta.value;
+            const before = val.substring(0, start);
+            const after = val.substring(start);
+            const bullet = (start === 0 || before.endsWith('\n')) ? '• ' : '\n• ';
+            ta.value = before + bullet + after;
+            ta.selectionStart = ta.selectionEnd = start + bullet.length;
+            ta.focus();
+        }
+
         // ============ VALIDATION ============
         function validateStep(step) {
             clearErrors();
@@ -886,9 +970,15 @@
                 if (!val('state')) { showError('state', 'stateError'); valid = false; }
             }
 
+            if (step === 2) {
+                if (!val('educationDetails')) { showError('educationDetails', 'educationDetailsError'); valid = false; }
+                if (!val('strength1')) { showError('strength1', 'strength1Error'); valid = false; }
+                if (!val('strength2')) { showError('strength2', 'strength2Error'); valid = false; }
+            }
+
             if (step === 4) {
                 if (cities.length === 0) {
-                    document.getElementById('citiesContainer').classList.add('error');
+                    document.getElementById('citiesCheckboxGrid').classList.add('error');
                     document.getElementById('citiesError').classList.add('visible');
                     valid = false;
                 }
@@ -921,7 +1011,7 @@
                     }
 
                     // Simple required fields
-                    ['teacher_level', 'youngest_age_preference', 'year_started', 'notes'].forEach(field => {
+                    ['teacher_level', 'youngest_age_preference', 'year_started'].forEach(field => {
                         const el = card.querySelector(`[data-field="${field}"]`);
                         if (el && !el.value.trim()) { el.classList.add('error'); cardValid = false; }
                     });
@@ -977,27 +1067,7 @@
         }
 
         // ============ CITIES ============
-        function addCity() {
-            const input = document.getElementById('newCity');
-            const v = input.value.trim();
-            if (v && !cities.includes(v)) {
-                cities.push(v);
-                renderCities();
-                input.value = '';
-            }
-            input.focus();
-        }
-        function removeCity(idx) { cities.splice(idx, 1); renderCities(); }
-        function renderCities() {
-            const c = document.getElementById('citiesContainer');
-            if (cities.length === 0) {
-                c.innerHTML = '<span class="tags-placeholder">No cities added yet</span>';
-            } else {
-                c.innerHTML = cities.map((city, i) => `
-                    <span class="tag">${city}<button type="button" onclick="removeCity(${i})"><i class="fas fa-times"></i></button></span>
-                `).join('');
-            }
-        }
+        // Cities are now handled by checkbox grid (renderCityCheckboxes / toggleCityCheckbox)
 
         // ============ LANGUAGES ============
         function addLanguage() {
@@ -1221,7 +1291,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Notes <span class="required">*</span></label>
+                        <label class="form-label">Notes</label>
                         <textarea class="form-textarea" data-field="notes" placeholder="Any additional notes about teaching this instrument...">${esc(inst.notes)}</textarea>
                     </div>
                 </div>
