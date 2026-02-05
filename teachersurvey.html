@@ -803,11 +803,17 @@
 
         async function loadBrandsAndStates() {
             try {
-                const result = await supabaseClient.from('studios').select('brand, state, city').order('brand');
+                const result = await supabaseClient.from('studios').select('brand, state, city, brands:brand_id(name)').order('city');
                 if (result.error) throw result.error;
-                allStudios = result.data || [];
+                // Normalize: use joined brand name if brand text is null
+                allStudios = (result.data || []).map(s => ({
+                    brand: s.brands?.name || s.brand || null,
+                    state: s.state,
+                    city: s.city
+                }));
+                console.log('Studios loaded:', allStudios);
 
-                // Populate states from studio_directory
+                // Get unique states
                 const states = [...new Set(allStudios.map(s => s.state).filter(Boolean))].sort();
                 const stateSelect = document.getElementById('state');
                 states.forEach(s => {
@@ -816,22 +822,22 @@
                     stateSelect.appendChild(opt);
                 });
 
-                // Initially populate brands with all
-                populateBrandDropdown(allStudios);
+                // Get unique brands
+                const allBrandNames = [...new Set(allStudios.map(s => s.brand).filter(Boolean))].sort();
+                populateBrandDropdown(allBrandNames);
 
-                // When state changes, filter brands
+                // When state changes, filter brands to only those with studios in that state
                 stateSelect.addEventListener('change', () => {
                     const selectedState = stateSelect.value;
-                    const brandSelect = document.getElementById('brand');
-                    brandSelect.value = '';
-                    if (selectedState) {
-                        populateBrandDropdown(allStudios.filter(s => s.state === selectedState));
-                    } else {
-                        populateBrandDropdown(allStudios);
-                    }
-                    // Reset cities when state changes
+                    document.getElementById('brand').value = '';
                     cities = [];
                     renderCityCheckboxes([]);
+                    if (selectedState) {
+                        const filtered = [...new Set(allStudios.filter(s => s.state === selectedState).map(s => s.brand).filter(Boolean))].sort();
+                        populateBrandDropdown(filtered);
+                    } else {
+                        populateBrandDropdown(allBrandNames);
+                    }
                 });
 
                 // When brand changes, load cities
@@ -839,9 +845,8 @@
                     const selectedBrand = document.getElementById('brand').value;
                     cities = [];
                     if (selectedBrand) {
-                        const brandCities = [...new Set(
-                            allStudios.filter(s => s.brand === selectedBrand && s.city).map(s => s.city)
-                        )].sort();
+                        const brandCities = [...new Set(allStudios.filter(s => s.brand === selectedBrand && s.city).map(s => s.city))].sort();
+                        console.log('Cities for', selectedBrand, ':', brandCities);
                         renderCityCheckboxes(brandCities);
                     } else {
                         renderCityCheckboxes([]);
@@ -850,6 +855,17 @@
             } catch (error) {
                 console.error('Error loading studios:', error);
             }
+        }
+
+        function populateBrandDropdown(brandNames) {
+            const brandSelect = document.getElementById('brand');
+            brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
+            brandNames.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                brandSelect.appendChild(opt);
+            });
         }
 
         function renderCityCheckboxes(cityList) {
@@ -874,18 +890,6 @@
             const idx = cities.indexOf(city);
             if (idx === -1) { cities.push(city); el.classList.add('selected'); }
             else { cities.splice(idx, 1); el.classList.remove('selected'); }
-        }
-
-        function populateBrandDropdown(studios) {
-            const brandSelect = document.getElementById('brand');
-            brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
-            const uniqueBrands = [...new Set(studios.map(s => s.brand).filter(Boolean))].sort();
-            uniqueBrands.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b;
-                opt.textContent = b;
-                brandSelect.appendChild(opt);
-            });
         }
 
         // ============ NAVIGATION ============
