@@ -617,18 +617,20 @@
             <div class="toggle-group">
                 <span class="toggle-label-text">Do you have formal music education?</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="formalEducation">
+                    <input type="checkbox" id="formalEducation" onchange="toggleEducationDetails()">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
-            <div class="form-group">
-                <label class="form-label">Education Details <span class="required">*</span></label>
-                <div class="edu-toolbar">
-                    <button type="button" class="edu-toolbar-btn" onclick="insertBullet()" title="Add bullet point"><i class="fas fa-list-ul"></i></button>
+            <div id="educationDetailsSection" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Education Details <span class="required">*</span></label>
+                    <div class="edu-toolbar">
+                        <button type="button" class="edu-toolbar-btn" onclick="insertBullet()" title="Add bullet point"><i class="fas fa-list-ul"></i></button>
+                    </div>
+                    <textarea class="form-textarea" id="educationDetails" placeholder="• Bachelor of Music from Juilliard School&#10;• Master's in Music Performance from Berklee&#10;• 10+ years private teaching experience"></textarea>
+                    <div class="form-hint">Degrees, certifications, and notable training. Use the bullet button or type • to add bullet points.</div>
+                    <div class="form-error" id="educationDetailsError">Education details are required when formal education is selected</div>
                 </div>
-                <textarea class="form-textarea" id="educationDetails" placeholder="• Bachelor of Music from Juilliard School&#10;• Master's in Music Performance from Berklee&#10;• 10+ years private teaching experience"></textarea>
-                <div class="form-hint">Degrees, certifications, and notable training. Use the bullet button or type • to add bullet points.</div>
-                <div class="form-error" id="educationDetailsError">Education details are required</div>
             </div>
             <div class="form-group">
                 <label class="form-label">Teaching Strength 1 <span class="required">*</span></label>
@@ -664,14 +666,14 @@
                 </label>
             </div>
             <div class="toggle-group">
-                <span class="toggle-label-text">Willing to teach online?</span>
+                <span class="toggle-label-text">Are you comfortable receiving new students that do lessons online only?</span>
                 <label class="toggle-switch">
                     <input type="checkbox" id="onlineWilling">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
             <div class="toggle-group">
-                <span class="toggle-label-text">Online only?</span>
+                <span class="toggle-label-text">Do you offer any times on your schedule that are online only?</span>
                 <label class="toggle-switch">
                     <input type="checkbox" id="onlineOnly">
                     <span class="toggle-slider"></span>
@@ -704,16 +706,9 @@
 
             <div class="form-group" style="margin-top: 1.5rem;">
                 <label class="form-label">Languages You Can Teach In <span class="required">*</span></label>
-                <div id="languagesContainer" class="tags-container">
-                    <span class="tags-placeholder">No languages added yet</span>
-                </div>
-                <div class="form-error" id="languagesError">Please add at least one language</div>
-                <div class="add-row">
-                    <input type="text" id="newLanguage" placeholder="e.g., English">
-                    <button type="button" class="btn btn-primary btn-small" onclick="addLanguage()">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
-                </div>
+                <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">Select all that apply</div>
+                <div class="genre-grid" id="languagesCheckboxGrid"></div>
+                <div class="form-error" id="languagesError">Please select at least one language</div>
             </div>
 
             <div class="step-nav">
@@ -801,25 +796,19 @@
             addInstrument();
             updateProgress();
             loadBrandsAndStates();
-
-            document.getElementById('newLanguage').addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); addLanguage(); } });
+            renderLanguageCheckboxes();
         });
 
-        let allBrands = [];
         let allStudios = [];
 
         async function loadBrandsAndStates() {
             try {
-                const [brandsResult, studiosResult] = await Promise.all([
-                    supabaseClient.from('brands').select('*').order('name'),
-                    supabaseClient.from('studio_directory').select('brand, city').order('city')
-                ]);
-                if (brandsResult.error) throw brandsResult.error;
-                allBrands = brandsResult.data || [];
-                allStudios = studiosResult.data || [];
+                const result = await supabaseClient.from('studio_directory').select('brand, state, city').order('brand');
+                if (result.error) throw result.error;
+                allStudios = result.data || [];
 
-                // Populate states
-                const states = [...new Set(allBrands.map(b => b.state).filter(Boolean))].sort();
+                // Populate states from studio_directory
+                const states = [...new Set(allStudios.map(s => s.state).filter(Boolean))].sort();
                 const stateSelect = document.getElementById('state');
                 states.forEach(s => {
                     const opt = document.createElement('option');
@@ -828,7 +817,7 @@
                 });
 
                 // Initially populate brands with all
-                populateBrandDropdown(allBrands);
+                populateBrandDropdown(allStudios);
 
                 // When state changes, filter brands
                 stateSelect.addEventListener('change', () => {
@@ -836,9 +825,9 @@
                     const brandSelect = document.getElementById('brand');
                     brandSelect.value = '';
                     if (selectedState) {
-                        populateBrandDropdown(allBrands.filter(b => b.state === selectedState));
+                        populateBrandDropdown(allStudios.filter(s => s.state === selectedState));
                     } else {
-                        populateBrandDropdown(allBrands);
+                        populateBrandDropdown(allStudios);
                     }
                     // Reset cities when state changes
                     cities = [];
@@ -859,7 +848,7 @@
                     }
                 });
             } catch (error) {
-                console.error('Error loading brands:', error);
+                console.error('Error loading studios:', error);
             }
         }
 
@@ -887,13 +876,14 @@
             else { cities.splice(idx, 1); el.classList.remove('selected'); }
         }
 
-        function populateBrandDropdown(brands) {
+        function populateBrandDropdown(studios) {
             const brandSelect = document.getElementById('brand');
             brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
-            brands.forEach(b => {
+            const uniqueBrands = [...new Set(studios.map(s => s.brand).filter(Boolean))].sort();
+            uniqueBrands.forEach(b => {
                 const opt = document.createElement('option');
-                opt.value = b.name;
-                opt.textContent = b.name + (b.state ? ` (${b.state})` : '');
+                opt.value = b;
+                opt.textContent = b;
                 brandSelect.appendChild(opt);
             });
         }
@@ -945,6 +935,38 @@
             fill.style.width = `${totalWidth * pct}px`;
         }
 
+        const LANGUAGE_OPTIONS = [
+            'English', 'Spanish', 'French', 'Mandarin', 'Cantonese',
+            'Japanese', 'Korean', 'Portuguese', 'German', 'Italian',
+            'Russian', 'Arabic', 'Vietnamese', 'Tagalog', 'ASL (Sign Language)', 'Other'
+        ];
+
+        function toggleEducationDetails() {
+            const section = document.getElementById('educationDetailsSection');
+            const isChecked = document.getElementById('formalEducation').checked;
+            section.style.display = isChecked ? 'block' : 'none';
+            if (!isChecked) document.getElementById('educationDetails').value = '';
+        }
+
+        function renderLanguageCheckboxes() {
+            const grid = document.getElementById('languagesCheckboxGrid');
+            grid.innerHTML = LANGUAGE_OPTIONS.map(lang => {
+                const checked = languages.includes(lang);
+                return `
+                    <div class="genre-checkbox ${checked ? 'selected' : ''}" onclick="toggleLanguageCheckbox(this, '${lang}')">
+                        <span class="genre-check-icon"><i class="fas fa-check"></i></span>
+                        <span class="genre-label">${lang}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleLanguageCheckbox(el, lang) {
+            const idx = languages.indexOf(lang);
+            if (idx === -1) { languages.push(lang); el.classList.add('selected'); }
+            else { languages.splice(idx, 1); el.classList.remove('selected'); }
+        }
+
         // ============ BULLET POINTS ============
         function insertBullet() {
             const ta = document.getElementById('educationDetails');
@@ -971,7 +993,9 @@
             }
 
             if (step === 2) {
-                if (!val('educationDetails')) { showError('educationDetails', 'educationDetailsError'); valid = false; }
+                if (document.getElementById('formalEducation').checked && !val('educationDetails')) {
+                    showError('educationDetails', 'educationDetailsError'); valid = false;
+                }
                 if (!val('strength1')) { showError('strength1', 'strength1Error'); valid = false; }
                 if (!val('strength2')) { showError('strength2', 'strength2Error'); valid = false; }
             }
@@ -983,7 +1007,7 @@
                     valid = false;
                 }
                 if (languages.length === 0) {
-                    document.getElementById('languagesContainer').classList.add('error');
+                    document.getElementById('languagesCheckboxGrid').classList.add('error');
                     document.getElementById('languagesError').classList.add('visible');
                     valid = false;
                 }
@@ -1069,28 +1093,7 @@
         // ============ CITIES ============
         // Cities are now handled by checkbox grid (renderCityCheckboxes / toggleCityCheckbox)
 
-        // ============ LANGUAGES ============
-        function addLanguage() {
-            const input = document.getElementById('newLanguage');
-            const v = input.value.trim();
-            if (v && !languages.includes(v)) {
-                languages.push(v);
-                renderLanguages();
-                input.value = '';
-            }
-            input.focus();
-        }
-        function removeLanguage(idx) { languages.splice(idx, 1); renderLanguages(); }
-        function renderLanguages() {
-            const c = document.getElementById('languagesContainer');
-            if (languages.length === 0) {
-                c.innerHTML = '<span class="tags-placeholder">No languages added yet</span>';
-            } else {
-                c.innerHTML = languages.map((lang, i) => `
-                    <span class="tag">${lang}<button type="button" onclick="removeLanguage(${i})"><i class="fas fa-times"></i></button></span>
-                `).join('');
-            }
-        }
+        // Languages are now handled by checkbox grid (renderLanguageCheckboxes / toggleLanguageCheckbox)
 
         // ============ INSTRUMENTS ============
         function addInstrument() {
@@ -1343,7 +1346,7 @@
                     <div class="review-section-title">Education & Strengths</div>
                     <div class="review-grid">
                         <div class="review-item"><label>Formal Education</label><p>${document.getElementById('formalEducation').checked ? 'Yes' : 'No'}</p></div>
-                        <div class="review-item"><label>Education Details</label><p>${esc(val('educationDetails')) || 'None'}</p></div>
+                        ${document.getElementById('formalEducation').checked ? `<div class="review-item" style="grid-column:1/-1;"><label>Education Details</label><p style="white-space:pre-line;">${esc(val('educationDetails'))}</p></div>` : ''}
                         ${val('strength1') ? `<div class="review-item"><label>Strength 1</label><p>${esc(val('strength1'))}</p></div>` : ''}
                         ${val('strength2') ? `<div class="review-item"><label>Strength 2</label><p>${esc(val('strength2'))}</p></div>` : ''}
                         ${val('strength3') ? `<div class="review-item"><label>Strength 3</label><p>${esc(val('strength3'))}</p></div>` : ''}
@@ -1354,8 +1357,8 @@
                     <div class="review-section-title">Teaching Preferences</div>
                     <div class="review-grid">
                         <div class="review-item"><label>Special Needs</label><p>${document.getElementById('specialNeeds').checked ? 'Yes' : 'No'}</p></div>
-                        <div class="review-item"><label>Online Willing</label><p>${document.getElementById('onlineWilling').checked ? 'Yes' : 'No'}</p></div>
-                        <div class="review-item"><label>Online Only</label><p>${document.getElementById('onlineOnly').checked ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item"><label>Comfortable with Online-Only Students</label><p>${document.getElementById('onlineWilling').checked ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item"><label>Offers Online-Only Times</label><p>${document.getElementById('onlineOnly').checked ? 'Yes' : 'No'}</p></div>
                         ${val('additionalNotes') ? `<div class="review-item" style="grid-column:1/-1;"><label>Additional Notes</label><p>${esc(val('additionalNotes'))}</p></div>` : ''}
                     </div>
                 </div>
