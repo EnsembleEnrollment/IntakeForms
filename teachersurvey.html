@@ -803,7 +803,7 @@
 
         async function loadBrandsAndStates() {
             try {
-                const result = await supabaseClient.from('studio_directory').select('brand, state, city').order('brand');
+                const result = await supabaseClient.from('studios').select('brand, state, city').order('brand');
                 if (result.error) throw result.error;
                 allStudios = result.data || [];
 
