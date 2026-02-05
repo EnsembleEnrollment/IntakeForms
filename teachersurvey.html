@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Information Survey - Enrollment Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #FA8072;
+            --primary-light: #FFB4A2;
+            --primary-dark: #E96E5D;
+            --accent: #FFA07A;
+            --accent-light: #FFCBA4;
+            --bg: #F8F9FA;
+            --white: #FFFFFF;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --text-light: #A0AEC0;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-300: #DEE2E6;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+            --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        /* Header */
+        .survey-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: white;
+        }
+        .survey-header-logo {
+            width: 56px; height: 56px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 14px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;
+        }
+        .survey-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.375rem; }
+        .survey-header p { font-size: 1rem; opacity: 0.9; }
+
+        /* Container */
+        .survey-container {
+            max-width: 720px;
+            margin: -1.5rem auto 2rem;
+            padding: 0 1rem;
+        }
+
+        /* Progress Bar */
+        .progress-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+        }
+        .progress-steps {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 24px;
+            right: 24px;
+            height: 3px;
+            background: var(--gray-200);
+            z-index: 0;
+        }
+        .progress-bar-fill {
+            position: absolute;
+            top: 18px;
+            left: 24px;
+            height: 3px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            z-index: 1;
+            transition: width 0.4s ease;
+            border-radius: 2px;
+        }
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 2;
+            cursor: default;
+        }
+        .step-circle {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--white);
+            border: 3px solid var(--gray-200);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8125rem; font-weight: 700; color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        .progress-step.active .step-circle {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(250, 128, 114, 0.15);
+        }
+        .progress-step.completed .step-circle {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-color: transparent;
+            color: white;
+        }
+        .step-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            text-align: center;
+            max-width: 80px;
+        }
+        .progress-step.active .step-label { color: var(--primary); }
+        .progress-step.completed .step-label { color: var(--text-secondary); }
+
+        /* Steps Content */
+        .step-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            display: none;
+        }
+        .step-card.active { display: block; }
+
+        .step-title {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        .step-subtitle {
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.75rem;
+        }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.375rem;
+        }
+        .form-label .required { color: var(--danger); margin-left: 2px; }
+        .form-hint { font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem; }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--gray-50);
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(250, 128, 114, 0.1);
+        }
+        .form-input.error, .form-select.error, .form-textarea.error {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+        .form-error { font-size: 0.75rem; color: var(--danger); margin-top: 0.25rem; display: none; }
+        .form-error.visible { display: block; }
+        .form-textarea { resize: vertical; min-height: 80px; }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+        /* Toggle */
+        .toggle-group {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem; background: var(--gray-50); border-radius: 10px; margin-bottom: 1rem;
+        }
+        .toggle-label-text { font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); }
+        .toggle-switch { position: relative; width: 50px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--gray-300); transition: 0.3s; border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 3px; bottom: 3px; background: white; transition: 0.3s; border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+        }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
+
+        /* Tags */
+        .tags-container {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            padding: 0.75rem; background: var(--gray-50); border-radius: 10px;
+            min-height: 48px; align-items: center;
+            border: 1.5px solid var(--gray-200);
+        }
+        .tags-container.error { border-color: var(--danger); }
+        .tags-placeholder { color: var(--text-light); font-size: 0.875rem; }
+        .tag {
+            display: inline-flex; align-items: center; gap: 0.375rem;
+            padding: 0.375rem 0.625rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; border-radius: 20px; font-size: 0.8125rem; font-weight: 500;
+        }
+        .tag button {
+            background: rgba(255,255,255,0.3); border: none; color: white;
+            width: 16px; height: 16px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.625rem; transition: all 0.2s;
+        }
+        .tag button:hover { background: rgba(255,255,255,0.5); }
+        .add-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+        .add-row input {
+            flex: 1; padding: 0.625rem 0.875rem;
+            border: 1.5px solid var(--gray-200); border-radius: 8px;
+            font-size: 0.875rem; color: var(--text-primary);
+        }
+        .add-row input:focus { outline: none; border-color: var(--primary); }
+
+        /* Instrument Card */
+        .instrument-card {
+            background: var(--gray-50);
+            border: 1.5px solid var(--gray-200);
+            border-radius: 14px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+        .instrument-card.has-errors { border-color: var(--danger); }
+        .instrument-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+        .instrument-number {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 1rem; font-weight: 700; color: var(--primary);
+        }
+        .instrument-number-badge {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        .remove-instrument-btn {
+            width: 32px; height: 32px; border: none;
+            background: rgba(239,68,68,0.1); color: var(--danger);
+            border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .remove-instrument-btn:hover { background: var(--danger); color: white; }
+
+        .add-instrument-btn {
+            width: 100%; padding: 1rem;
+            border: 2px dashed var(--gray-300);
+            background: transparent; border-radius: 14px;
+            color: var(--text-secondary); font-size: 0.9375rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .add-instrument-btn:hover {
+            border-color: var(--primary); color: var(--primary);
+            background: rgba(250, 128, 114, 0.03);
+        }
+
+        .instrument-required-note {
+            background: rgba(250, 128, 114, 0.08);
+            border: 1px solid rgba(250, 128, 114, 0.2);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.8125rem;
+            color: var(--primary-dark);
+            margin-bottom: 1.25rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .instrument-required-note i { font-size: 0.875rem; }
+
+        .age-note {
+            background: rgba(250, 200, 80, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.8125rem;
+            color: #92600A;
+            margin-bottom: 1rem;
+            display: flex; align-items: flex-start; gap: 0.5rem;
+            line-height: 1.5;
+        }
+        .age-note i { color: var(--warning); margin-top: 0.125rem; flex-shrink: 0; }
+
+        /* Genre Checkboxes */
+        .genre-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        .genre-checkbox {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 0.75rem; background: var(--gray-50);
+            border: 1.5px solid var(--gray-200); border-radius: 8px;
+            cursor: pointer; transition: all 0.2s; user-select: none;
+        }
+        .genre-checkbox:hover { border-color: var(--primary-light); }
+        .genre-checkbox.selected {
+            background: rgba(250, 128, 114, 0.08);
+            border-color: var(--primary);
+        }
+        .genre-checkbox input[type="checkbox"] {
+            width: 0; height: 0; position: absolute; opacity: 0; pointer-events: none;
+        }
+        .genre-check-icon {
+            width: 18px; height: 18px; border-radius: 4px;
+            border: 2px solid var(--gray-300); display: flex;
+            align-items: center; justify-content: center;
+            font-size: 0.625rem; color: transparent; transition: all 0.2s; flex-shrink: 0;
+        }
+        .genre-checkbox.selected .genre-check-icon {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-color: transparent; color: white;
+        }
+        .genre-label { font-size: 0.875rem; font-weight: 500; color: var(--text-primary); }
+        .genre-grid.error .genre-checkbox { border-color: rgba(239,68,68,0.3); }
+
+        /* Credentials tags inside instrument cards */
+        .cred-tags-container {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            padding: 0.625rem; background: var(--white); border-radius: 8px;
+            min-height: 40px; align-items: center;
+            border: 1.5px solid var(--gray-200);
+        }
+        .cred-tags-container.error { border-color: var(--danger); }
+        .cred-add-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .cred-add-row input {
+            flex: 1; padding: 0.5rem 0.75rem; border: 1.5px solid var(--gray-200);
+            border-radius: 8px; font-size: 0.8125rem; color: var(--text-primary); background: var(--white);
+        }
+        .cred-add-row input:focus { outline: none; border-color: var(--primary); }
+
+        /* Confirmation checkbox */
+        .confirm-section {
+            margin-top: 1.5rem; padding: 1.25rem;
+            background: rgba(250, 128, 114, 0.06);
+            border: 2px solid rgba(250, 128, 114, 0.2);
+            border-radius: 12px;
+        }
+        .confirm-section.error { border-color: var(--danger); }
+        .confirm-label {
+            display: flex; align-items: flex-start; gap: 0.75rem;
+            cursor: pointer; user-select: none;
+        }
+        .confirm-label input[type="checkbox"] { display: none; }
+        .confirm-check-box {
+            width: 22px; height: 22px; border-radius: 6px;
+            border: 2px solid var(--gray-300); display: flex;
+            align-items: center; justify-content: center;
+            font-size: 0.75rem; color: transparent; transition: all 0.2s; flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .confirm-label input:checked ~ .confirm-check-box {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-color: transparent; color: white;
+        }
+        .confirm-text { font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); line-height: 1.5; }
+        .confirm-text strong { color: var(--primary-dark); }
+
+        /* Navigation Buttons */
+        .step-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 2rem; padding-top: 1.5rem;
+            border-top: 1px solid var(--gray-200);
+        }
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.75rem 1.5rem; border-radius: 10px;
+            font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+            border: none; transition: all 0.2s ease; text-decoration: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; box-shadow: 0 4px 12px rgba(250,128,114,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(250,128,114,0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: var(--white); color: var(--text-primary);
+            border: 1.5px solid var(--gray-200);
+        }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-small { padding: 0.5rem 0.875rem; font-size: 0.8125rem; border-radius: 8px; }
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #34D399);
+            color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,0.4); }
+
+        /* Review Section */
+        .review-section { margin-bottom: 1.5rem; }
+        .review-section-title {
+            font-size: 0.8125rem; font-weight: 700; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 0.75rem; padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-100);
+        }
+        .review-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 1rem; }
+        .review-item label { font-size: 0.75rem; color: var(--text-light); font-weight: 600; }
+        .review-item p { font-size: 0.9375rem; color: var(--text-primary); }
+        .review-tags { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.25rem; }
+        .review-tag {
+            padding: 0.2rem 0.5rem; background: rgba(250,128,114,0.1);
+            color: var(--primary-dark); border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+        }
+        .review-instrument-card {
+            background: var(--gray-50); border: 1px solid var(--gray-200);
+            border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem;
+        }
+        .review-instrument-name { font-weight: 700; color: var(--primary); margin-bottom: 0.5rem; }
+
+        /* Success Screen */
+        .success-screen {
+            text-align: center; padding: 3rem 1.5rem;
+            display: none;
+        }
+        .success-screen.active { display: block; }
+        .success-icon {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--success), #34D399);
+            color: white; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; margin-bottom: 1.5rem;
+            box-shadow: 0 8px 24px rgba(16,185,129,0.3);
+        }
+        .success-screen h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .success-screen p { color: var(--text-secondary); font-size: 1rem; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem; background: white;
+            border-radius: 12px; padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-xl); display: flex; align-items: center; gap: 0.75rem;
+            z-index: 3000; transform: translateY(100px); opacity: 0; transition: all 0.3s ease;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast-icon { font-size: 1.25rem; color: var(--danger); }
+        .toast-message { font-size: 0.9375rem; color: var(--text-primary); font-weight: 500; }
+
+        @media (max-width: 600px) {
+            .survey-header { padding: 1.5rem 1rem; }
+            .survey-header h1 { font-size: 1.375rem; }
+            .survey-container { padding: 0 0.75rem; }
+            .step-card { padding: 1.25rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .step-label { display: none; }
+            .progress-steps::before { left: 18px; right: 18px; }
+            .progress-bar-fill { left: 18px; }
+            .review-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="survey-header">
+        <div class="survey-header-logo">EH</div>
+        <h1>Teacher Information Survey</h1>
+        <p>Please complete all sections so we can build your teacher profile</p>
+    </div>
+
+    <div class="survey-container">
+        <!-- Progress -->
+        <div class="progress-section">
+            <div class="progress-steps">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+                <div class="progress-step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <span class="step-label">Basic Info</span>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Education</span>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Preferences</span>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <span class="step-label">Locations</span>
+                </div>
+                <div class="progress-step" data-step="5">
+                    <div class="step-circle">5</div>
+                    <span class="step-label">Instruments</span>
+                </div>
+                <div class="progress-step" data-step="6">
+                    <div class="step-circle">6</div>
+                    <span class="step-label">Review</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Basic Info -->
+        <div class="step-card active" id="step1">
+            <h2 class="step-title">Basic Information</h2>
+            <p class="step-subtitle">Let's start with your name and studio details</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">First Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="firstName" required>
+                    <div class="form-error" id="firstNameError">First name is required</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="lastName" required>
+                    <div class="form-error" id="lastNameError">Last name is required</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">State <span class="required">*</span></label>
+                    <select class="form-select" id="state">
+                        <option value="">Select state...</option>
+                    </select>
+                    <div class="form-error" id="stateError">State is required</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Studio / Brand <span class="required">*</span></label>
+                    <select class="form-select" id="brand">
+                        <option value="">Select studio/brand...</option>
+                    </select>
+                    <div class="form-hint">Select a state first to filter brands</div>
+                    <div class="form-error" id="brandError">Studio/Brand is required</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Gender</label>
+                    <select class="form-select" id="gender">
+                        <option value="">Select gender...</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Year Started at Studio</label>
+                    <input type="number" class="form-input" id="yearStarted" placeholder="e.g., 2020">
+                </div>
+            </div>
+
+            <div class="step-nav">
+                <div></div>
+                <button class="btn btn-primary" onclick="nextStep(1)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 2: Education -->
+        <div class="step-card" id="step2">
+            <h2 class="step-title">Education & Strengths</h2>
+            <p class="step-subtitle">Tell us about your musical background</p>
+
+            <div class="toggle-group">
+                <span class="toggle-label-text">Do you have formal music education?</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="formalEducation">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Education Details</label>
+                <textarea class="form-textarea" id="educationDetails" placeholder="e.g., Bachelor of Music from Juilliard School, Master's in Music Performance from Berklee..."></textarea>
+                <div class="form-hint">Degrees, certifications, and notable training</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teaching Strength 1</label>
+                <input type="text" class="form-input" id="strength1" placeholder="e.g., Patient with beginners">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teaching Strength 2</label>
+                <input type="text" class="form-input" id="strength2" placeholder="e.g., Strong classical technique">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teaching Strength 3</label>
+                <input type="text" class="form-input" id="strength3" placeholder="e.g., Competition preparation">
+            </div>
+
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(2)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(2)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 3: Preferences -->
+        <div class="step-card" id="step3">
+            <h2 class="step-title">Teaching Preferences</h2>
+            <p class="step-subtitle">Help us understand how you like to teach</p>
+
+            <div class="toggle-group">
+                <span class="toggle-label-text">Willing to teach special needs students?</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="specialNeeds">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="toggle-group">
+                <span class="toggle-label-text">Willing to teach online?</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="onlineWilling">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="toggle-group">
+                <span class="toggle-label-text">Online only?</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="onlineOnly">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Additional Notes</label>
+                <textarea class="form-textarea" id="additionalNotes" placeholder="Anything else you'd like us to know about your teaching style or availability..."></textarea>
+            </div>
+
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(3)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(3)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 4: Cities & Languages -->
+        <div class="step-card" id="step4">
+            <h2 class="step-title">Locations & Languages</h2>
+            <p class="step-subtitle">Where do you teach and what languages can you teach in?</p>
+
+            <div class="form-group">
+                <label class="form-label">Cities Where You Teach <span class="required">*</span></label>
+                <div id="citiesContainer" class="tags-container">
+                    <span class="tags-placeholder">No cities added yet</span>
+                </div>
+                <div class="form-error" id="citiesError">Please add at least one city</div>
+                <div class="add-row">
+                    <input type="text" id="newCity" placeholder="e.g., Salt Lake City">
+                    <button type="button" class="btn btn-primary btn-small" onclick="addCity()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label">Languages You Can Teach In <span class="required">*</span></label>
+                <div id="languagesContainer" class="tags-container">
+                    <span class="tags-placeholder">No languages added yet</span>
+                </div>
+                <div class="form-error" id="languagesError">Please add at least one language</div>
+                <div class="add-row">
+                    <input type="text" id="newLanguage" placeholder="e.g., English">
+                    <button type="button" class="btn btn-primary btn-small" onclick="addLanguage()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(4)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(4)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 5: Instruments -->
+        <div class="step-card" id="step5">
+            <h2 class="step-title">Instruments You Teach</h2>
+            <p class="step-subtitle">Add every instrument you teach — all fields are required for each one</p>
+
+            <div class="instrument-required-note">
+                <i class="fas fa-info-circle"></i>
+                <span>You must add <strong>at least one instrument</strong>, and <strong>all fields are required</strong> for each instrument you add.</span>
+            </div>
+
+            <div id="instrumentsContainer"></div>
+
+            <button type="button" class="add-instrument-btn" onclick="addInstrument()">
+                <i class="fas fa-plus-circle"></i> Add Another Instrument
+            </button>
+
+            <div class="form-error" id="instrumentsError" style="margin-top: 0.5rem;">Please add at least one instrument</div>
+
+            <div class="confirm-section" id="confirmSection">
+                <label class="confirm-label">
+                    <input type="checkbox" id="allInstrumentsConfirm">
+                    <span class="confirm-check-box"><i class="fas fa-check"></i></span>
+                    <span class="confirm-text">I confirm that I have added <strong>ALL instruments I teach</strong>. I understand this is very important for matching me with the right students.</span>
+                </label>
+            </div>
+            <div class="form-error" id="confirmError" style="margin-top: 0.5rem;">You must confirm you've added all instruments before continuing</div>
+
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(5)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(5)">Review <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 6: Review & Submit -->
+        <div class="step-card" id="step6">
+            <h2 class="step-title">Review Your Information</h2>
+            <p class="step-subtitle">Please review everything before submitting</p>
+
+            <div id="reviewContent"></div>
+
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(6)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-success" id="submitBtn" onclick="submitSurvey()">
+                    <i class="fas fa-check"></i> Submit Survey
+                </button>
+            </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div class="step-card success-screen" id="successScreen">
+            <div class="success-icon"><i class="fas fa-check"></i></div>
+            <h2>Thank You!</h2>
+            <p>Your teacher profile has been submitted successfully.<br>Our team will review your information and approve your profile shortly.</p>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <i class="fas fa-exclamation-circle toast-icon"></i>
+        <span class="toast-message"></span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://kvyvjwepfrqqkvyyutdw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2eXZqd2VwZnJxcWt2eXl1dGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjgyOTgsImV4cCI6MjA4MjgwNDI5OH0.ZayLxzQCEFENvQ9FwpLm4x2le2Y9kJvSslX8DVRzAh8';
+
+        let supabaseClient;
+        let currentStep = 1;
+        const totalSteps = 6;
+
+        let cities = [];
+        let languages = [];
+        let instruments = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            addInstrument();
+            updateProgress();
+            loadBrandsAndStates();
+
+            document.getElementById('newCity').addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); addCity(); } });
+            document.getElementById('newLanguage').addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); addLanguage(); } });
+        });
+
+        let allBrands = [];
+
+        async function loadBrandsAndStates() {
+            try {
+                const result = await supabaseClient.from('brands').select('*').order('name');
+                if (result.error) throw result.error;
+                allBrands = result.data || [];
+
+                // Populate states
+                const states = [...new Set(allBrands.map(b => b.state).filter(Boolean))].sort();
+                const stateSelect = document.getElementById('state');
+                states.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s; opt.textContent = s;
+                    stateSelect.appendChild(opt);
+                });
+
+                // Initially populate brands with all
+                populateBrandDropdown(allBrands);
+
+                // When state changes, filter brands
+                stateSelect.addEventListener('change', () => {
+                    const selectedState = stateSelect.value;
+                    const brandSelect = document.getElementById('brand');
+                    brandSelect.value = '';
+                    if (selectedState) {
+                        populateBrandDropdown(allBrands.filter(b => b.state === selectedState));
+                    } else {
+                        populateBrandDropdown(allBrands);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading brands:', error);
+            }
+        }
+
+        function populateBrandDropdown(brands) {
+            const brandSelect = document.getElementById('brand');
+            brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
+            brands.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.name;
+                opt.textContent = b.name + (b.state ? ` (${b.state})` : '');
+                brandSelect.appendChild(opt);
+            });
+        }
+
+        // ============ NAVIGATION ============
+        function nextStep(fromStep) {
+            if (!validateStep(fromStep)) return;
+            if (fromStep < totalSteps) {
+                goToStep(fromStep + 1);
+            }
+        }
+
+        function prevStep(fromStep) {
+            if (fromStep > 1) {
+                goToStep(fromStep - 1);
+            }
+        }
+
+        function goToStep(step) {
+            currentStep = step;
+            document.querySelectorAll('.step-card').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+            updateProgress();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (step === 6) buildReview();
+        }
+
+        function updateProgress() {
+            const steps = document.querySelectorAll('.progress-step');
+            steps.forEach((s, i) => {
+                const stepNum = i + 1;
+                s.classList.remove('active', 'completed');
+                if (stepNum < currentStep) {
+                    s.classList.add('completed');
+                    s.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>';
+                } else if (stepNum === currentStep) {
+                    s.classList.add('active');
+                    s.querySelector('.step-circle').textContent = stepNum;
+                } else {
+                    s.querySelector('.step-circle').textContent = stepNum;
+                }
+            });
+
+            // Progress bar fill
+            const fill = document.getElementById('progressBarFill');
+            const totalWidth = document.querySelector('.progress-steps').offsetWidth - 48;
+            const pct = (currentStep - 1) / (totalSteps - 1);
+            fill.style.width = `${totalWidth * pct}px`;
+        }
+
+        // ============ VALIDATION ============
+        function validateStep(step) {
+            clearErrors();
+            let valid = true;
+
+            if (step === 1) {
+                if (!val('firstName')) { showError('firstName', 'firstNameError'); valid = false; }
+                if (!val('lastName')) { showError('lastName', 'lastNameError'); valid = false; }
+                if (!val('brand')) { showError('brand', 'brandError'); valid = false; }
+                if (!val('state')) { showError('state', 'stateError'); valid = false; }
+            }
+
+            if (step === 4) {
+                if (cities.length === 0) {
+                    document.getElementById('citiesContainer').classList.add('error');
+                    document.getElementById('citiesError').classList.add('visible');
+                    valid = false;
+                }
+                if (languages.length === 0) {
+                    document.getElementById('languagesContainer').classList.add('error');
+                    document.getElementById('languagesError').classList.add('visible');
+                    valid = false;
+                }
+            }
+
+            if (step === 5) {
+                if (instruments.length === 0) {
+                    document.getElementById('instrumentsError').classList.add('visible');
+                    valid = false;
+                }
+                syncInstrumentsFromDOM();
+                instruments.forEach((inst, idx) => {
+                    const card = document.querySelectorAll('.instrument-card')[idx];
+                    if (!card) return;
+                    let cardValid = true;
+
+                    // Instrument selection
+                    const instSelect = card.querySelector('[data-field="instrument"]');
+                    if (instSelect && !instSelect.value) { instSelect.classList.add('error'); cardValid = false; }
+
+                    // Other instrument name
+                    if (inst.instrument === 'Other') {
+                        const otherInput = card.querySelector('[data-field="instrument_other"]');
+                        if (otherInput && !otherInput.value.trim()) { otherInput.classList.add('error'); cardValid = false; }
+                    }
+
+                    // Simple required fields
+                    ['teacher_level', 'youngest_age_preference', 'year_started', 'notes'].forEach(field => {
+                        const el = card.querySelector(`[data-field="${field}"]`);
+                        if (el && !el.value.trim()) { el.classList.add('error'); cardValid = false; }
+                    });
+
+                    // Genres (at least one selected)
+                    if (!inst.selectedGenres || inst.selectedGenres.length === 0) {
+                        const genreGrid = card.querySelector('.genre-grid');
+                        if (genreGrid) genreGrid.classList.add('error');
+                        cardValid = false;
+                    }
+
+                    // Credentials (at least one)
+                    if (!inst.credentials || inst.credentials.length === 0) {
+                        const credContainer = card.querySelector('.cred-tags-container');
+                        if (credContainer) credContainer.classList.add('error');
+                        cardValid = false;
+                    }
+
+                    if (!cardValid) { card.classList.add('has-errors'); valid = false; }
+                });
+
+                // Confirmation checkbox
+                if (!document.getElementById('allInstrumentsConfirm').checked) {
+                    document.getElementById('confirmSection').classList.add('error');
+                    document.getElementById('confirmError').classList.add('visible');
+                    valid = false;
+                }
+
+                if (!valid && instruments.length > 0) {
+                    showToast('Please fill in all required fields for each instrument and confirm you\'ve added all instruments');
+                }
+            }
+
+            if (!valid && step !== 5) {
+                showToast('Please fill in all required fields');
+            }
+            return valid;
+        }
+
+        function val(id) { return document.getElementById(id).value.trim(); }
+        function showError(inputId, errorId) {
+            document.getElementById(inputId).classList.add('error');
+            document.getElementById(errorId).classList.add('visible');
+        }
+        function clearErrors() {
+            document.querySelectorAll('.form-input.error, .form-select.error, .form-textarea.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.form-error.visible').forEach(el => el.classList.remove('visible'));
+            document.querySelectorAll('.tags-container.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.instrument-card.has-errors').forEach(el => el.classList.remove('has-errors'));
+            document.querySelectorAll('.genre-grid.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.cred-tags-container.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.confirm-section.error').forEach(el => el.classList.remove('error'));
+        }
+
+        // ============ CITIES ============
+        function addCity() {
+            const input = document.getElementById('newCity');
+            const v = input.value.trim();
+            if (v && !cities.includes(v)) {
+                cities.push(v);
+                renderCities();
+                input.value = '';
+            }
+            input.focus();
+        }
+        function removeCity(idx) { cities.splice(idx, 1); renderCities(); }
+        function renderCities() {
+            const c = document.getElementById('citiesContainer');
+            if (cities.length === 0) {
+                c.innerHTML = '<span class="tags-placeholder">No cities added yet</span>';
+            } else {
+                c.innerHTML = cities.map((city, i) => `
+                    <span class="tag">${city}<button type="button" onclick="removeCity(${i})"><i class="fas fa-times"></i></button></span>
+                `).join('');
+            }
+        }
+
+        // ============ LANGUAGES ============
+        function addLanguage() {
+            const input = document.getElementById('newLanguage');
+            const v = input.value.trim();
+            if (v && !languages.includes(v)) {
+                languages.push(v);
+                renderLanguages();
+                input.value = '';
+            }
+            input.focus();
+        }
+        function removeLanguage(idx) { languages.splice(idx, 1); renderLanguages(); }
+        function renderLanguages() {
+            const c = document.getElementById('languagesContainer');
+            if (languages.length === 0) {
+                c.innerHTML = '<span class="tags-placeholder">No languages added yet</span>';
+            } else {
+                c.innerHTML = languages.map((lang, i) => `
+                    <span class="tag">${lang}<button type="button" onclick="removeLanguage(${i})"><i class="fas fa-times"></i></button></span>
+                `).join('');
+            }
+        }
+
+        // ============ INSTRUMENTS ============
+        function addInstrument() {
+            instruments.push({
+                instrument: '', instrument_other: '', teacher_level: '', youngest_age_preference: '',
+                selectedGenres: [], year_started: '', credentials: [], notes: ''
+            });
+            renderInstruments();
+        }
+
+        function removeInstrument(idx) {
+            if (instruments.length <= 1) {
+                showToast('You must have at least one instrument');
+                return;
+            }
+            syncInstrumentsFromDOM();
+            instruments.splice(idx, 1);
+            renderInstruments();
+        }
+
+        function syncInstrumentsFromDOM() {
+            const cards = document.querySelectorAll('.instrument-card');
+            cards.forEach((card, idx) => {
+                if (!instruments[idx]) return;
+                const simpleFields = ['instrument', 'instrument_other', 'teacher_level', 'youngest_age_preference', 'year_started', 'notes'];
+                simpleFields.forEach(field => {
+                    const el = card.querySelector(`[data-field="${field}"]`);
+                    if (el) instruments[idx][field] = el.value;
+                });
+                // Genres synced via toggleGenre, credentials synced via addCredential/removeCredential
+            });
+        }
+
+        const INSTRUMENT_OPTIONS = [
+            'Banjo', 'Bass', 'Cello', 'Clarinet', 'Drums', 'Flute', 'Guitar',
+            'Piano', 'Saxophone', 'Trumpet', 'Ukulele', 'Viola', 'Violin', 'Voice', 'Other'
+        ];
+
+        const GENRE_OPTIONS = [
+            'Classical', 'Pop/Contemporary', 'Rock', 'Jazz', 'Worship',
+            'Blues', 'Country', 'Musical Theater', 'Folk/Indie', 'World'
+        ];
+
+        // Per-instrument credentials stored as arrays
+        function addCredential(idx) {
+            const input = document.querySelector(`#credInput_${idx}`);
+            if (!input) return;
+            const v = input.value.trim();
+            if (v && !instruments[idx].credentials.includes(v)) {
+                instruments[idx].credentials.push(v);
+                renderCredentials(idx);
+                input.value = '';
+            }
+            input.focus();
+        }
+        function removeCredential(instIdx, credIdx) {
+            instruments[instIdx].credentials.splice(credIdx, 1);
+            renderCredentials(instIdx);
+        }
+        function renderCredentials(idx) {
+            const container = document.querySelector(`#credsContainer_${idx}`);
+            if (!container) return;
+            if (instruments[idx].credentials.length === 0) {
+                container.innerHTML = '<span class="tags-placeholder">No credentials added yet</span>';
+            } else {
+                container.innerHTML = instruments[idx].credentials.map((c, ci) => `
+                    <span class="tag">${esc(c)}<button type="button" onclick="removeCredential(${idx}, ${ci})"><i class="fas fa-times"></i></button></span>
+                `).join('');
+            }
+        }
+        function toggleGenre(idx, genre) {
+            if (!instruments[idx].selectedGenres) instruments[idx].selectedGenres = [];
+            const arr = instruments[idx].selectedGenres;
+            const i = arr.indexOf(genre);
+            if (i === -1) arr.push(genre);
+            else arr.splice(i, 1);
+        }
+        const PIANO_UKULELE = ['Piano', 'Ukulele'];
+
+        function getAgeOptions(instrumentName) {
+            const isPianoUke = PIANO_UKULELE.includes(instrumentName);
+            const maxAge = isPianoUke ? 5 : 7;
+            let opts = '';
+            for (let a = 3; a <= maxAge; a++) {
+                opts += `<option value="${a}">${a}</option>`;
+            }
+            opts += `<option value="none">None of the above</option>`;
+            return opts;
+        }
+
+        function getDisplayName(inst) {
+            if (inst.instrument === 'Other' && inst.instrument_other) return inst.instrument_other;
+            return inst.instrument || 'New Instrument';
+        }
+
+        function renderInstruments() {
+            const container = document.getElementById('instrumentsContainer');
+            container.innerHTML = instruments.map((inst, idx) => {
+                const showOther = inst.instrument === 'Other';
+                const hasInstrument = !!inst.instrument;
+                const displayName = getDisplayName(inst);
+
+                const genreCheckboxes = GENRE_OPTIONS.map(g => {
+                    const checked = (inst.selectedGenres || []).includes(g);
+                    return `
+                        <div class="genre-checkbox ${checked ? 'selected' : ''}" onclick="toggleGenreUI(this, ${idx}, '${g}')">
+                            <span class="genre-check-icon"><i class="fas fa-check"></i></span>
+                            <span class="genre-label">${g}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                <div class="instrument-card">
+                    <div class="instrument-card-header">
+                        <div class="instrument-number">
+                            <span class="instrument-number-badge">${idx + 1}</span>
+                            ${esc(displayName)}
+                        </div>
+                        <button type="button" class="remove-instrument-btn" onclick="removeInstrument(${idx})" title="Remove instrument">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Instrument <span class="required">*</span></label>
+                            <select class="form-select" data-field="instrument" onchange="onInstrumentChange(${idx}, this)">
+                                <option value="">Select instrument...</option>
+                                ${INSTRUMENT_OPTIONS.map(o => `<option value="${o}" ${inst.instrument === o ? 'selected' : ''}>${o}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group" id="otherGroup_${idx}" style="display: ${showOther ? 'block' : 'none'};">
+                            <label class="form-label">Specify Instrument <span class="required">*</span></label>
+                            <input type="text" class="form-input" data-field="instrument_other" value="${esc(inst.instrument_other || '')}" placeholder="e.g., Mandolin">
+                        </div>
+                        <div class="form-group" ${showOther ? 'style="display:none;"' : ''} id="levelGroup_${idx}">
+                            <label class="form-label">Teaching Level <span class="required">*</span></label>
+                            <select class="form-select" data-field="teacher_level">
+                                <option value="">Select level...</option>
+                                <option value="beginner" ${inst.teacher_level === 'beginner' ? 'selected' : ''}>Beginner</option>
+                                <option value="intermediate" ${inst.teacher_level === 'intermediate' ? 'selected' : ''}>Intermediate</option>
+                                <option value="advanced" ${inst.teacher_level === 'advanced' ? 'selected' : ''}>Advanced</option>
+                            </select>
+                        </div>
+                    </div>
+                    ${showOther ? `
+                    <div class="form-group">
+                        <label class="form-label">Teaching Level <span class="required">*</span></label>
+                        <select class="form-select" data-field="teacher_level">
+                            <option value="">Select level...</option>
+                            <option value="beginner" ${inst.teacher_level === 'beginner' ? 'selected' : ''}>Beginner</option>
+                            <option value="intermediate" ${inst.teacher_level === 'intermediate' ? 'selected' : ''}>Intermediate</option>
+                            <option value="advanced" ${inst.teacher_level === 'advanced' ? 'selected' : ''}>Advanced</option>
+                        </select>
+                    </div>` : ''}
+                    <div class="age-note">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Every instrument has a minimum teaching age. This opens opportunities to get more students and fill your schedule according to your teaching level and comfortability — and opens the door for young musicians. Choose "None of the above" if not applicable.</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Youngest Age You'd Teach <span class="required">*</span></label>
+                            <div class="form-hint" style="margin-top:0; margin-bottom: 0.375rem;">Other than what's already listed on your account, what's the youngest age you'd be interested in teaching this instrument?</div>
+                            <select class="form-select" data-field="youngest_age_preference" ${!hasInstrument ? 'disabled' : ''}>
+                                <option value="">${hasInstrument ? 'Select age...' : 'Select an instrument first'}</option>
+                                ${hasInstrument ? getAgeOptions(inst.instrument) : ''}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Year Started Teaching <span class="required">*</span></label>
+                            <div class="form-hint" style="margin-top:0; margin-bottom: 0.375rem;">At our studio or any studio</div>
+                            <input type="number" class="form-input" data-field="year_started" value="${esc(inst.year_started)}" placeholder="e.g., 2015">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Genres You Specialize In <span class="required">*</span></label>
+                        <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">Select all that apply</div>
+                        <div class="genre-grid" id="genreGrid_${idx}">
+                            ${genreCheckboxes}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Achievements / Credentials <span class="required">*</span></label>
+                        <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">Add each credential separately</div>
+                        <div class="cred-tags-container" id="credsContainer_${idx}">
+                            ${(inst.credentials || []).length === 0
+                                ? '<span class="tags-placeholder">No credentials added yet</span>'
+                                : inst.credentials.map((c, ci) => `
+                                    <span class="tag">${esc(c)}<button type="button" onclick="removeCredential(${idx}, ${ci})"><i class="fas fa-times"></i></button></span>
+                                `).join('')
+                            }
+                        </div>
+                        <div class="cred-add-row">
+                            <input type="text" id="credInput_${idx}" placeholder="e.g., MTAC Certified" onkeypress="if(event.key==='Enter'){event.preventDefault();addCredential(${idx});}">
+                            <button type="button" class="btn btn-primary btn-small" onclick="addCredential(${idx})">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes <span class="required">*</span></label>
+                        <textarea class="form-textarea" data-field="notes" placeholder="Any additional notes about teaching this instrument...">${esc(inst.notes)}</textarea>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function toggleGenreUI(el, idx, genre) {
+            toggleGenre(idx, genre);
+            const isSelected = (instruments[idx].selectedGenres || []).includes(genre);
+            if (isSelected) {
+                el.classList.add('selected');
+            } else {
+                el.classList.remove('selected');
+            }
+        }
+
+        function onInstrumentChange(idx, selectEl) {
+            syncInstrumentsFromDOM();
+            const value = selectEl.value;
+            instruments[idx].instrument = value;
+            instruments[idx].youngest_age_preference = '';
+            if (value !== 'Other') {
+                instruments[idx].instrument_other = '';
+            }
+            renderInstruments();
+        }
+
+        function esc(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        // ============ REVIEW ============
+        function buildReview() {
+            syncInstrumentsFromDOM();
+            const html = `
+                <div class="review-section">
+                    <div class="review-section-title">Basic Information</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Name</label><p>${esc(val('firstName'))} ${esc(val('lastName'))}</p></div>
+                        <div class="review-item"><label>Studio/Brand</label><p>${esc(val('brand'))}</p></div>
+                        <div class="review-item"><label>State</label><p>${esc(val('state'))}</p></div>
+                        <div class="review-item"><label>Gender</label><p>${val('gender') || 'Not specified'}</p></div>
+                        <div class="review-item"><label>Year Started</label><p>${val('yearStarted') || 'Not specified'}</p></div>
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-section-title">Education & Strengths</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Formal Education</label><p>${document.getElementById('formalEducation').checked ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item"><label>Education Details</label><p>${esc(val('educationDetails')) || 'None'}</p></div>
+                        ${val('strength1') ? `<div class="review-item"><label>Strength 1</label><p>${esc(val('strength1'))}</p></div>` : ''}
+                        ${val('strength2') ? `<div class="review-item"><label>Strength 2</label><p>${esc(val('strength2'))}</p></div>` : ''}
+                        ${val('strength3') ? `<div class="review-item"><label>Strength 3</label><p>${esc(val('strength3'))}</p></div>` : ''}
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-section-title">Teaching Preferences</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Special Needs</label><p>${document.getElementById('specialNeeds').checked ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item"><label>Online Willing</label><p>${document.getElementById('onlineWilling').checked ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item"><label>Online Only</label><p>${document.getElementById('onlineOnly').checked ? 'Yes' : 'No'}</p></div>
+                        ${val('additionalNotes') ? `<div class="review-item" style="grid-column:1/-1;"><label>Additional Notes</label><p>${esc(val('additionalNotes'))}</p></div>` : ''}
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-section-title">Locations & Languages</div>
+                    <div class="review-item" style="margin-bottom: 0.75rem;">
+                        <label>Cities</label>
+                        <div class="review-tags">${cities.map(c => `<span class="review-tag">${esc(c)}</span>`).join('')}</div>
+                    </div>
+                    <div class="review-item">
+                        <label>Languages (Teach In)</label>
+                        <div class="review-tags">${languages.map(l => `<span class="review-tag">${esc(l)}</span>`).join('')}</div>
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-section-title">Instruments (${instruments.length})</div>
+                    ${instruments.map((inst, i) => {
+                        const instName = inst.instrument === 'Other' ? (inst.instrument_other || 'Other') : inst.instrument;
+                        const ageDisplay = inst.youngest_age_preference === 'none' ? 'N/A' : inst.youngest_age_preference;
+                        const genresDisplay = (inst.selectedGenres || []).join(', ') || 'None';
+                        const credsDisplay = (inst.credentials || []).join(', ') || 'None';
+                        return `
+                        <div class="review-instrument-card">
+                            <div class="review-instrument-name">${esc(instName)}</div>
+                            <div class="review-grid">
+                                <div class="review-item"><label>Level</label><p>${esc(inst.teacher_level)}</p></div>
+                                <div class="review-item"><label>Youngest Age</label><p>${esc(ageDisplay)}</p></div>
+                                <div class="review-item"><label>Year Started Teaching</label><p>${esc(inst.year_started)}</p></div>
+                                <div class="review-item" style="grid-column:1/-1;">
+                                    <label>Genres</label>
+                                    <div class="review-tags">${(inst.selectedGenres || []).map(g => `<span class="review-tag">${esc(g)}</span>`).join('')}</div>
+                                </div>
+                                <div class="review-item" style="grid-column:1/-1;">
+                                    <label>Credentials</label>
+                                    <div class="review-tags">${(inst.credentials || []).map(c => `<span class="review-tag">${esc(c)}</span>`).join('')}</div>
+                                </div>
+                                <div class="review-item" style="grid-column:1/-1;"><label>Notes</label><p>${esc(inst.notes)}</p></div>
+                            </div>
+                        </div>
+                    `}).join('')}
+                </div>
+            `;
+            document.getElementById('reviewContent').innerHTML = html;
+        }
+
+        // ============ SUBMIT ============
+        async function submitSurvey() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+            try {
+                // 1. Insert teacher
+                const teacherData = {
+                    first_name: val('firstName'),
+                    last_name: val('lastName'),
+                    brand: val('brand'),
+                    state: val('state'),
+                    gender: val('gender') || null,
+                    year_started_at_studio: val('yearStarted') ? parseInt(val('yearStarted')) : null,
+                    status: 'pending',
+                    formal_music_education: document.getElementById('formalEducation').checked,
+                    formal_education_details: val('educationDetails') || null,
+                    teaching_strength_1: val('strength1') || null,
+                    teaching_strength_2: val('strength2') || null,
+                    teaching_strength_3: val('strength3') || null,
+                    special_needs_willing: document.getElementById('specialNeeds').checked,
+                    online_willing: document.getElementById('onlineWilling').checked,
+                    online_only: document.getElementById('onlineOnly').checked,
+                    additional_notes: val('additionalNotes') || null
+                };
+
+                const teacherResult = await supabaseClient.from('teachers').insert([teacherData]).select();
+                if (teacherResult.error) throw teacherResult.error;
+                const teacherId = teacherResult.data[0].id;
+
+                // 2. Insert cities
+                if (cities.length > 0) {
+                    const cityRows = cities.map((city, i) => ({
+                        teacher_id: teacherId,
+                        city: city,
+                        order_index: i
+                    }));
+                    const citiesResult = await supabaseClient.from('teacher_cities').insert(cityRows);
+                    if (citiesResult.error) throw citiesResult.error;
+                }
+
+                // 3. Insert languages
+                if (languages.length > 0) {
+                    const langRows = languages.map((lang, i) => ({
+                        teacher_id: teacherId,
+                        language: lang,
+                        order_index: i
+                    }));
+                    const langsResult = await supabaseClient.from('teacher_languages').insert(langRows);
+                    if (langsResult.error) throw langsResult.error;
+                }
+
+                // 4. Insert instruments
+                syncInstrumentsFromDOM();
+                const instRows = instruments.map((inst, i) => {
+                    const instrumentName = inst.instrument === 'Other' ? (inst.instrument_other || 'Other') : inst.instrument;
+                    const ageVal = inst.youngest_age_preference === 'none' ? null : parseInt(inst.youngest_age_preference);
+                    return {
+                        teacher_id: teacherId,
+                        instrument: instrumentName,
+                        teacher_level: inst.teacher_level,
+                        youngest_age_preference: ageVal,
+                        year_started: parseInt(inst.year_started),
+                        genres: (inst.selectedGenres || []).join(', '),
+                        achievements_credentials: (inst.credentials || []).join(', '),
+                        notes: inst.notes,
+                        order_index: i
+                    };
+                });
+                const instsResult = await supabaseClient.from('teacher_instruments').insert(instRows);
+                if (instsResult.error) throw instsResult.error;
+
+                // Show success
+                document.querySelectorAll('.step-card').forEach(s => s.classList.remove('active'));
+                document.getElementById('successScreen').classList.add('active');
+                // Mark all steps completed
+                document.querySelectorAll('.progress-step').forEach(s => {
+                    s.classList.remove('active');
+                    s.classList.add('completed');
+                    s.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>';
+                });
+                const fill = document.getElementById('progressBarFill');
+                const totalWidth = document.querySelector('.progress-steps').offsetWidth - 48;
+                fill.style.width = `${totalWidth}px`;
+
+            } catch (error) {
+                console.error('Submit error:', error);
+                showToast('Error submitting survey. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Submit Survey';
+            }
+        }
+
+        // ============ TOAST ============
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('.toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+    </script>
+</body>
+</html>
