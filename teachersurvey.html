@@ -57,14 +57,15 @@
         .survey-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.375rem; }
         .survey-header p { font-size: 1rem; opacity: 0.9; }
         .refresh-warning {
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 10px; padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 10px; padding: 0.875rem 1.125rem;
             display: flex; align-items: center; gap: 0.625rem;
-            font-size: 0.8125rem; color: #92600A;
-            max-width: 720px; margin: 1rem auto 0; 
+            font-size: 0.9rem; color: #fff;
+            max-width: 720px; margin: 1rem auto 0;
+            backdrop-filter: blur(4px);
         }
-        .refresh-warning i { color: var(--warning); flex-shrink: 0; }
+        .refresh-warning i { color: #fff; flex-shrink: 0; font-size: 1.2rem; }
 
         /* Education toolbar */
         .edu-toolbar {
@@ -496,6 +497,104 @@
         .toast-icon { font-size: 1.25rem; color: var(--danger); }
         .toast-message { font-size: 0.9375rem; color: var(--text-primary); font-weight: 500; }
 
+        /* Slider */
+        .slider-container {
+            padding: 1.5rem;
+            background: var(--gray-50);
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+        }
+        .slider-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .slider-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+        .slider-wrapper {
+            position: relative;
+            padding: 0 0.5rem;
+        }
+        .slider-input {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--slider-progress, 50%), var(--gray-200) var(--slider-progress, 50%), var(--gray-200) 100%);
+            outline: none;
+            cursor: pointer;
+        }
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(250, 128, 114, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .slider-input::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(250, 128, 114, 0.5);
+        }
+        .slider-input::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(250, 128, 114, 0.4);
+        }
+        .slider-value-display {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .slider-value {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border-radius: 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(250, 128, 114, 0.3);
+        }
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        .slider-note {
+            background: rgba(250, 128, 114, 0.08);
+            border: 1px solid rgba(250, 128, 114, 0.2);
+            border-radius: 10px;
+            padding: 0.875rem 1rem;
+            font-size: 0.8125rem;
+            color: var(--primary-dark);
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .slider-note i {
+            margin-top: 0.125rem;
+            flex-shrink: 0;
+        }
+
         @media (max-width: 600px) {
             .survey-header { padding: 1.5rem 1rem; }
             .survey-header h1 { font-size: 1.375rem; }
@@ -517,7 +616,7 @@
         <p>Please complete all sections so we can build your teacher profile</p>
         <div class="refresh-warning">
             <i class="fas fa-exclamation-triangle"></i>
-            <span><strong>Important:</strong> Do not refresh or close this page while filling out the survey — all your progress will be lost.</span>
+            <span><strong>⚠️ Don't lose your work!</strong> This survey cannot be saved as a draft. If you refresh, close, or navigate away from this page, you'll need to start over from the beginning.</span>
         </div>
     </div>
 
@@ -544,10 +643,14 @@
                 </div>
                 <div class="progress-step" data-step="5">
                     <div class="step-circle">5</div>
-                    <span class="step-label">Instruments</span>
+                    <span class="step-label">Student Needs</span>
                 </div>
                 <div class="progress-step" data-step="6">
                     <div class="step-circle">6</div>
+                    <span class="step-label">Instruments</span>
+                </div>
+                <div class="progress-step" data-step="7">
+                    <div class="step-circle">7</div>
                     <span class="step-label">Review</span>
                 </div>
             </div>
@@ -590,16 +693,21 @@
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Gender</label>
-                    <select class="form-select" id="gender">
+                    <select class="form-select" id="gender" onchange="toggleGenderOther()">
                         <option value="">Select gender...</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="genderOtherGroup" style="display: none;">
+                    <label class="form-label">Please Specify</label>
+                    <input type="text" class="form-input" id="genderOther" placeholder="Please specify your gender">
+                </div>
+                <div class="form-group" id="yearStartedGroup">
                     <label class="form-label">Year Started at Studio</label>
-                    <input type="number" class="form-input" id="yearStarted" placeholder="e.g., 2020">
+                    <input type="number" class="form-input" id="yearStarted" placeholder="e.g., 2020" min="1950" max="2026">
                 </div>
             </div>
 
@@ -665,20 +773,7 @@
                     <span class="toggle-slider"></span>
                 </label>
             </div>
-            <div class="toggle-group">
-                <span class="toggle-label-text">Are you comfortable receiving new students that do lessons online only?</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="onlineWilling">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="toggle-group">
-                <span class="toggle-label-text">Do you offer any times on your schedule that are online only?</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="onlineOnly">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
+            
             <div class="form-group">
                 <label class="form-label">Additional Notes</label>
                 <textarea class="form-textarea" id="additionalNotes" placeholder="Anything else you'd like us to know about your teaching style or availability..."></textarea>
@@ -717,8 +812,41 @@
             </div>
         </div>
 
-        <!-- Step 5: Instruments -->
+        <!-- Step 5: Student Needs -->
         <div class="step-card" id="step5">
+            <h2 class="step-title">Student Learning Needs</h2>
+            <p class="step-subtitle">Help us understand your comfort level with different learning styles</p>
+
+            <div class="slider-container">
+                <div class="slider-label">Comfort Level with Diverse Learning Needs</div>
+                <div class="slider-description">
+                    How comfortable are you teaching students who may have different learning needs? This includes students with ADHD, autism spectrum, dyslexia, sensory processing differences, or other conditions that may require adapted teaching approaches.
+                </div>
+                <div class="slider-wrapper">
+                    <input type="range" class="slider-input" id="learningNeedsComfort" min="1" max="10" value="5" oninput="updateSlider(this)">
+                    <div class="slider-labels">
+                        <span>1 - Less comfortable</span>
+                        <span>10 - Very comfortable</span>
+                    </div>
+                </div>
+                <div class="slider-value-display">
+                    <span class="slider-value" id="sliderValueDisplay">5</span>
+                </div>
+            </div>
+
+            <div class="slider-note">
+                <i class="fas fa-info-circle"></i>
+                <span>There's no right or wrong answer here — we want to match students with teachers who are the best fit for their needs. Being honest helps us create better matches for everyone.</span>
+            </div>
+
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(5)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(5)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 6: Instruments -->
+        <div class="step-card" id="step6">
             <h2 class="step-title">Instruments You Teach</h2>
             <p class="step-subtitle">Add every instrument you teach — fill in all required fields for each one</p>
 
@@ -745,20 +873,20 @@
             <div class="form-error" id="confirmError" style="margin-top: 0.5rem;">You must confirm you've added all instruments before continuing</div>
 
             <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(5)"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" onclick="nextStep(5)">Review <i class="fas fa-arrow-right"></i></button>
+                <button class="btn btn-secondary" onclick="prevStep(6)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(6)">Review <i class="fas fa-arrow-right"></i></button>
             </div>
         </div>
 
-        <!-- Step 6: Review & Submit -->
-        <div class="step-card" id="step6">
+        <!-- Step 7: Review & Submit -->
+        <div class="step-card" id="step7">
             <h2 class="step-title">Review Your Information</h2>
             <p class="step-subtitle">Please review everything before submitting</p>
 
             <div id="reviewContent"></div>
 
             <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(6)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-secondary" onclick="prevStep(7)"><i class="fas fa-arrow-left"></i> Back</button>
                 <button class="btn btn-success" id="submitBtn" onclick="submitSurvey()">
                     <i class="fas fa-check"></i> Submit Survey
                 </button>
@@ -785,7 +913,7 @@
 
         let supabaseClient;
         let currentStep = 1;
-        const totalSteps = 6;
+        const totalSteps = 7;
 
         let cities = [];
         let languages = [];
@@ -797,7 +925,17 @@
             updateProgress();
             loadBrandsAndStates();
             renderLanguageCheckboxes();
+            // Initialize slider
+            const slider = document.getElementById('learningNeedsComfort');
+            if (slider) updateSlider(slider);
         });
+
+        function updateSlider(slider) {
+            const value = slider.value;
+            const progress = ((value - 1) / 9) * 100;
+            slider.style.setProperty('--slider-progress', progress + '%');
+            document.getElementById('sliderValueDisplay').textContent = value;
+        }
 
         let allStudios = [];
 
@@ -892,6 +1030,20 @@
             else { cities.splice(idx, 1); el.classList.remove('selected'); }
         }
 
+        // ============ GENDER OTHER TOGGLE ============
+        function toggleGenderOther() {
+            const genderSelect = document.getElementById('gender');
+            const genderOtherGroup = document.getElementById('genderOtherGroup');
+            const yearStartedGroup = document.getElementById('yearStartedGroup');
+            
+            if (genderSelect.value === 'Other') {
+                genderOtherGroup.style.display = 'block';
+            } else {
+                genderOtherGroup.style.display = 'none';
+                document.getElementById('genderOther').value = '';
+            }
+        }
+
         // ============ NAVIGATION ============
         function nextStep(fromStep) {
             if (!validateStep(fromStep)) return;
@@ -913,7 +1065,7 @@
             updateProgress();
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            if (step === 6) buildReview();
+            if (step === 7) buildReview();
         }
 
         function updateProgress() {
@@ -1017,7 +1169,7 @@
                 }
             }
 
-            if (step === 5) {
+            if (step === 6) {
                 if (instruments.length === 0) {
                     document.getElementById('instrumentsError').classList.add('visible');
                     valid = false;
@@ -1073,7 +1225,7 @@
                 }
             }
 
-            if (!valid && step !== 5) {
+            if (!valid && step !== 6) {
                 showToast('Please fill in all required fields');
             }
             return valid;
@@ -1111,6 +1263,9 @@
         function removeInstrument(idx) {
             if (instruments.length <= 1) {
                 showToast('You must have at least one instrument');
+                return;
+            }
+            if (!confirm('Are you sure you want to remove this instrument?')) {
                 return;
             }
             syncInstrumentsFromDOM();
@@ -1161,7 +1316,7 @@
             const container = document.querySelector(`#credsContainer_${idx}`);
             if (!container) return;
             if (instruments[idx].credentials.length === 0) {
-                container.innerHTML = '<span class="tags-placeholder">No credentials added yet</span>';
+                container.innerHTML = '<span class="tags-placeholder">No certifications or experience added yet</span>';
             } else {
                 container.innerHTML = instruments[idx].credentials.map((c, ci) => `
                     <span class="tag">${esc(c)}<button type="button" onclick="removeCredential(${idx}, ${ci})"><i class="fas fa-times"></i></button></span>
@@ -1234,7 +1389,7 @@
                             <input type="text" class="form-input" data-field="instrument_other" value="${esc(inst.instrument_other || '')}" placeholder="e.g., Mandolin">
                         </div>
                         <div class="form-group" ${showOther ? 'style="display:none;"' : ''} id="levelGroup_${idx}">
-                            <label class="form-label">Teaching Level <span class="required">*</span></label>
+                            <label class="form-label">Highest Teaching Level <span class="required">*</span></label>
                             <select class="form-select" data-field="teacher_level">
                                 <option value="">Select level...</option>
                                 <option value="beginner" ${inst.teacher_level === 'beginner' ? 'selected' : ''}>Beginner</option>
@@ -1245,7 +1400,7 @@
                     </div>
                     ${showOther ? `
                     <div class="form-group">
-                        <label class="form-label">Teaching Level <span class="required">*</span></label>
+                        <label class="form-label">Highest Teaching Level <span class="required">*</span></label>
                         <select class="form-select" data-field="teacher_level">
                             <option value="">Select level...</option>
                             <option value="beginner" ${inst.teacher_level === 'beginner' ? 'selected' : ''}>Beginner</option>
@@ -1260,7 +1415,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Youngest Age You'd Teach <span class="required">*</span></label>
-                            <div class="form-hint" style="margin-top:0; margin-bottom: 0.375rem;">Other than what's already listed on your account, what's the youngest age you'd be interested in teaching this instrument?</div>
+                            <div class="form-hint" style="margin-top:0; margin-bottom: 0.375rem;">What's the youngest age you'd be interested in teaching this instrument?</div>
                             <select class="form-select" data-field="youngest_age_preference" ${!hasInstrument ? 'disabled' : ''}>
                                 <option value="">${hasInstrument ? 'Select age...' : 'Select an instrument first'}</option>
                                 ${hasInstrument ? getAgeOptions(inst.instrument) : ''}
@@ -1269,29 +1424,29 @@
                         <div class="form-group">
                             <label class="form-label">Year Started Teaching <span class="required">*</span></label>
                             <div class="form-hint" style="margin-top:0; margin-bottom: 0.375rem;">At our studio or any studio</div>
-                            <input type="number" class="form-input" data-field="year_started" value="${esc(inst.year_started)}" placeholder="e.g., 2015">
+                            <input type="number" class="form-input" data-field="year_started" value="${esc(inst.year_started)}" placeholder="e.g., 2015" min="1950" max="2026">
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Genres You Specialize In <span class="required">*</span></label>
-                        <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">Select all that apply</div>
+                        <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">At our studio, our teachers teach all genres. If there are areas you specialize in, please select them here.</div>
                         <div class="genre-grid" id="genreGrid_${idx}">
                             ${genreCheckboxes}
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Achievements / Credentials <span class="required">*</span></label>
-                        <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">Add each credential separately</div>
+                        <label class="form-label">Certifications & Experience <span class="required">*</span></label>
+                        <div class="form-hint" style="margin-top:0; margin-bottom: 0.5rem;">Add certifications (e.g., MTAC, RCM) and notable experience (e.g., "10 years teaching," "Performed with LA Phil")</div>
                         <div class="cred-tags-container" id="credsContainer_${idx}">
                             ${(inst.credentials || []).length === 0
-                                ? '<span class="tags-placeholder">No credentials added yet</span>'
+                                ? '<span class="tags-placeholder">No certifications or experience added yet</span>'
                                 : inst.credentials.map((c, ci) => `
                                     <span class="tag">${esc(c)}<button type="button" onclick="removeCredential(${idx}, ${ci})"><i class="fas fa-times"></i></button></span>
                                 `).join('')
                             }
                         </div>
                         <div class="cred-add-row">
-                            <input type="text" id="credInput_${idx}" placeholder="e.g., MTAC Certified" onkeypress="if(event.key==='Enter'){event.preventDefault();addCredential(${idx});}">
+                            <input type="text" id="credInput_${idx}" placeholder="e.g., MTAC Certified, 15 years teaching" onkeypress="if(event.key==='Enter'){event.preventDefault();addCredential(${idx});}">
                             <button type="button" class="btn btn-primary btn-small" onclick="addCredential(${idx})">
                                 <i class="fas fa-plus"></i> Add
                             </button>
@@ -1334,6 +1489,17 @@
         // ============ REVIEW ============
         function buildReview() {
             syncInstrumentsFromDOM();
+            
+            // Get gender display value
+            const genderVal = val('gender');
+            const genderOtherVal = val('genderOther');
+            let genderDisplay = 'Not specified';
+            if (genderVal === 'Other' && genderOtherVal) {
+                genderDisplay = genderOtherVal;
+            } else if (genderVal) {
+                genderDisplay = genderVal;
+            }
+            
             const html = `
                 <div class="review-section">
                     <div class="review-section-title">Basic Information</div>
@@ -1341,7 +1507,7 @@
                         <div class="review-item"><label>Name</label><p>${esc(val('firstName'))} ${esc(val('lastName'))}</p></div>
                         <div class="review-item"><label>Studio/Brand</label><p>${esc(val('brand'))}</p></div>
                         <div class="review-item"><label>State</label><p>${esc(val('state'))}</p></div>
-                        <div class="review-item"><label>Gender</label><p>${val('gender') || 'Not specified'}</p></div>
+                        <div class="review-item"><label>Gender</label><p>${esc(genderDisplay)}</p></div>
                         <div class="review-item"><label>Year Started</label><p>${val('yearStarted') || 'Not specified'}</p></div>
                     </div>
                 </div>
@@ -1361,9 +1527,14 @@
                     <div class="review-section-title">Teaching Preferences</div>
                     <div class="review-grid">
                         <div class="review-item"><label>Special Needs</label><p>${document.getElementById('specialNeeds').checked ? 'Yes' : 'No'}</p></div>
-                        <div class="review-item"><label>Comfortable with Online-Only Students</label><p>${document.getElementById('onlineWilling').checked ? 'Yes' : 'No'}</p></div>
-                        <div class="review-item"><label>Offers Online-Only Times</label><p>${document.getElementById('onlineOnly').checked ? 'Yes' : 'No'}</p></div>
                         ${val('additionalNotes') ? `<div class="review-item" style="grid-column:1/-1;"><label>Additional Notes</label><p>${esc(val('additionalNotes'))}</p></div>` : ''}
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-section-title">Student Learning Needs</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Comfort Level with Diverse Learning Needs</label><p>${val('learningNeedsComfort')} / 10</p></div>
                     </div>
                 </div>
 
@@ -1398,7 +1569,7 @@
                                     <div class="review-tags">${(inst.selectedGenres || []).map(g => `<span class="review-tag">${esc(g)}</span>`).join('')}</div>
                                 </div>
                                 <div class="review-item" style="grid-column:1/-1;">
-                                    <label>Credentials</label>
+                                    <label>Certifications & Experience</label>
                                     <div class="review-tags">${(inst.credentials || []).map(c => `<span class="review-tag">${esc(c)}</span>`).join('')}</div>
                                 </div>
                                 <div class="review-item" style="grid-column:1/-1;"><label>Notes</label><p>${esc(inst.notes)}</p></div>
@@ -1417,13 +1588,25 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
             try {
+                // Get gender value (use custom value if "Other" selected)
+                const genderVal = val('gender');
+                const genderOtherVal = val('genderOther');
+                let finalGender = null;
+                if (genderVal === 'Other' && genderOtherVal) {
+                    finalGender = genderOtherVal;
+                } else if (genderVal && genderVal !== 'Other') {
+                    finalGender = genderVal;
+                } else if (genderVal === 'Other') {
+                    finalGender = 'Other';
+                }
+
                 // 1. Insert teacher
                 const teacherData = {
                     first_name: val('firstName'),
                     last_name: val('lastName'),
                     brand: val('brand'),
                     state: val('state'),
-                    gender: val('gender') || null,
+                    gender: finalGender,
                     year_started_at_studio: val('yearStarted') ? parseInt(val('yearStarted')) : null,
                     status: 'pending',
                     formal_music_education: document.getElementById('formalEducation').checked,
@@ -1432,8 +1615,7 @@
                     teaching_strength_2: val('strength2') || null,
                     teaching_strength_3: val('strength3') || null,
                     special_needs_willing: document.getElementById('specialNeeds').checked,
-                    online_willing: document.getElementById('onlineWilling').checked,
-                    online_only: document.getElementById('onlineOnly').checked,
+                    learning_needs_comfort: parseInt(val('learningNeedsComfort')),
                     additional_notes: val('additionalNotes') || null
                 };
 
