@@ -746,18 +746,7 @@
                     <div class="form-error" id="instrumentYearError">Year started is required</div>
                 </div>
             </div>
-            <div class="age-note">
-                <i class="fas fa-lightbulb"></i>
-                <span>Every instrument has a minimum teaching age. This opens opportunities to get more students and fill your schedule.</span>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Youngest Age You'd Teach <span class="required">*</span></label>
-                <div class="form-hint" style="margin-top:0;margin-bottom:0.375rem;">What's the youngest age you'd be interested in teaching this instrument?</div>
-                <select class="form-select" id="instrumentYoungestAge">
-                    <option value="">Select age...</option>
-                </select>
-                <div class="form-error" id="instrumentAgeError">Youngest age is required</div>
-            </div>
+
             <div class="form-group">
                 <label class="form-label">Genres You Specialize In <span class="required">*</span></label>
                 <div class="form-hint" style="margin-top:0;margin-bottom:0.5rem;">Select all that apply.</div>
@@ -922,7 +911,7 @@
                         <li>Make sure the photo is not blurry</li>
                         <li>You should be the only person in the photo</li>
                     </ol>
-                    <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-secondary);">Questions or need help? Email <a href="mailto:hr@thepianoplaceutah.com" style="color:var(--primary);">hr@thepianoplaceutah.com</a></div>
+                    <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-secondary);">Questions or need help? Email <a href="/cdn-cgi/l/email-protection#e38b91a3978b86938a828d8c938f8280869697828bcd808c8e" style="color:var(--primary);"><span class="__cf_email__" data-cfemail="f59d87b5819d90859c949b9a85999496908081949ddb969a98">[email&#160;protected]</span></a></div>
                 </div>
                 <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoFileInput').click()">
                     <input type="file" id="photoFileInput" accept="image/*" onchange="handlePhotoSelect(this)">
@@ -967,7 +956,7 @@
         <span class="toast-message"></span>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         const SUPABASE_URL = 'https://kvyvjwepfrqqkvyyutdw.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2eXZqd2VwZnJxcWt2eXl1dGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjgyOTgsImV4cCI6MjA4MjgwNDI5OH0.ZayLxzQCEFENvQ9FwpLm4x2le2Y9kJvSslX8DVRzAh8';
 
@@ -1061,10 +1050,10 @@
 
         async function loadBrandsAndStates() {
             try {
-                const result = await supabaseClient.from('studios').select('brand, state, city, brands:brand_id(name)').order('city');
+                const result = await supabaseClient.from('studios').select('brand, state, city').order('city');
                 if (result.error) throw result.error;
                 allStudios = (result.data || []).map(s => ({
-                    brand: s.brands?.name || s.brand || null,
+                    brand: s.brand || null,
                     state: s.state,
                     city: s.city
                 }));
@@ -1093,7 +1082,7 @@
                 opt.value = b; opt.textContent = b;
                 brandSelect.appendChild(opt);
             });
-            brandSelect.addEventListener('change', onBrandChange);
+            brandSelect.onchange = onBrandChange;
         }
 
         function onBrandChange() {
@@ -1310,8 +1299,7 @@
             document.getElementById('otherInstrumentName').value = inst.instrument_other || '';
             document.getElementById('instrumentLevel').value = inst.teacher_level || '';
             document.getElementById('instrumentYearStarted').value = inst.year_started || '';
-            updateAgeOptions(inst.instrument);
-            document.getElementById('instrumentYoungestAge').value = inst.youngest_age_preference || '';
+
             setSelectedGenres(inst.selectedGenres || []);
             currentCredentials = [...(inst.credentials || [])];
             renderCredentials();
@@ -1342,7 +1330,7 @@
             inst.instrument_other = document.getElementById('otherInstrumentName').value.trim();
             inst.teacher_level = document.getElementById('instrumentLevel').value;
             inst.year_started = document.getElementById('instrumentYearStarted').value;
-            inst.youngest_age_preference = document.getElementById('instrumentYoungestAge').value;
+
             inst.selectedGenres = getSelectedGenres();
             inst.credentials = [...currentCredentials];
             inst.notes = document.getElementById('instrumentNotes').value;
@@ -1358,7 +1346,7 @@
             }
             if (!document.getElementById('instrumentLevel').value) { showError('instrumentLevel', 'instrumentLevelError'); valid = false; }
             if (!document.getElementById('instrumentYearStarted').value) { showError('instrumentYearStarted', 'instrumentYearError'); valid = false; }
-            if (!document.getElementById('instrumentYoungestAge').value) { showError('instrumentYoungestAge', 'instrumentAgeError'); valid = false; }
+
             if (getSelectedGenres().length === 0) { document.getElementById('genreGrid').classList.add('error'); document.getElementById('genreError').classList.add('visible'); valid = false; }
             if (currentCredentials.length === 0) { document.getElementById('credentialsContainer').classList.add('error'); document.getElementById('credentialError').classList.add('visible'); valid = false; }
             if (!valid) showToast('Please fill in all required fields');
@@ -1522,7 +1510,6 @@
                             <div class="review-instrument-name">${esc(instName)}</div>
                             <div class="review-grid">
                                 <div class="review-item"><label>Level</label><p>${esc(inst.teacher_level)}</p></div>
-                                <div class="review-item"><label>Youngest Age</label><p>${esc(ageDisplay)}</p></div>
                                 <div class="review-item"><label>Year Started</label><p>${esc(inst.year_started)}</p></div>
                                 <div class="review-item" style="grid-column:1/-1;"><label>Genres</label>
                                     <div class="review-tags">${(inst.selectedGenres||[]).map(g=>`<span class="review-tag">${esc(g)}</span>`).join('')}</div>
@@ -1640,7 +1627,6 @@
                         teacher_id: teacherId,
                         instrument: instrumentName,
                         teacher_level: inst.teacher_level,
-                        youngest_age_preference: ageVal,
                         year_started: parseInt(inst.year_started),
                         genres: (inst.selectedGenres || []).join(', '),
                         achievements_credentials: (inst.credentials || []).join(', '),
@@ -1672,11 +1658,4 @@
 
         // ============ TOAST ============
         function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.querySelector('.toast-message').textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3500);
-        }
-    </script>
-</body>
-</html>
+            const toast = doc
