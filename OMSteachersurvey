@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Information Survey - Enrollment Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #FA8072;
+            --primary-light: #FFB4A2;
+            --primary-dark: #E96E5D;
+            --accent: #FFA07A;
+            --accent-light: #FFCBA4;
+            --bg: #F8F9FA;
+            --white: #FFFFFF;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --text-light: #A0AEC0;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-300: #DEE2E6;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+            --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .survey-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: white;
+        }
+        .survey-header-logo {
+            width: 56px; height: 56px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 14px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;
+        }
+        .survey-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.375rem; }
+        .survey-header p { font-size: 1rem; opacity: 0.9; }
+        .refresh-warning {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.6);
+            border-radius: 10px; padding: 0.875rem 1.125rem;
+            display: flex; align-items: center; gap: 0.625rem;
+            font-size: 0.9rem; color: #fff;
+            max-width: 720px; margin: 1rem auto 0;
+            backdrop-filter: blur(4px);
+        }
+        .refresh-warning i { color: #fff; flex-shrink: 0; font-size: 1.2rem; }
+
+        .edu-toolbar { display: flex; gap: 0.25rem; margin-bottom: 0.375rem; }
+        .edu-toolbar-btn {
+            width: 34px; height: 34px; border: 1.5px solid var(--gray-200);
+            background: var(--white); color: var(--text-secondary); border-radius: 8px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 0.875rem; transition: all 0.2s;
+        }
+        .edu-toolbar-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(250,128,114,0.05); }
+
+        .survey-container {
+            max-width: 720px;
+            margin: -1.5rem auto 2rem;
+            padding: 0 1rem;
+        }
+
+        .progress-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+        }
+        .progress-steps {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 18px; left: 24px; right: 24px;
+            height: 3px;
+            background: var(--gray-200);
+            z-index: 0;
+        }
+        .progress-bar-fill {
+            position: absolute;
+            top: 18px; left: 24px;
+            height: 3px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            z-index: 1;
+            transition: width 0.4s ease;
+            border-radius: 2px;
+        }
+        .progress-step {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 0.5rem; z-index: 2; cursor: default;
+        }
+        .step-circle {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--white); border: 3px solid var(--gray-200);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8125rem; font-weight: 700; color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        .progress-step.active .step-circle {
+            border-color: var(--primary); color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(250,128,114,0.15);
+        }
+        .progress-step.completed .step-circle {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-color: transparent; color: white;
+        }
+        .step-label {
+            font-size: 0.6875rem; font-weight: 600; color: var(--text-light);
+            text-transform: uppercase; letter-spacing: 0.03em;
+            text-align: center; max-width: 70px;
+        }
+        .progress-step.active .step-label { color: var(--primary); }
+        .progress-step.completed .step-label { color: var(--text-secondary); }
+
+        .step-card {
+            background: var(--white); border-radius: 16px;
+            padding: 2rem; box-shadow: var(--shadow-md); display: none;
+        }
+        .step-card.active { display: block; }
+
+        .step-title { font-size: 1.375rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .step-subtitle { font-size: 0.9375rem; color: var(--text-secondary); margin-bottom: 1.75rem; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.375rem; }
+        .form-label .required { color: var(--danger); margin-left: 2px; }
+        .form-hint { font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem; line-height: 1.5; }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%; padding: 0.75rem 1rem;
+            background: var(--gray-50); border: 1.5px solid var(--gray-200);
+            border-radius: 10px; font-size: 0.9375rem; color: var(--text-primary);
+            font-family: inherit; transition: all 0.2s;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none; border-color: var(--primary);
+            background: var(--white); box-shadow: 0 0 0 3px rgba(250,128,114,0.1);
+        }
+        .form-textarea { resize: vertical; min-height: 100px; }
+        .form-input.error, .form-select.error, .form-textarea.error { border-color: var(--danger); }
+        .form-error { color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem; display: none; }
+        .form-error.visible { display: block; }
+
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+        .toggle-group {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem; background: var(--gray-50); border-radius: 10px; margin-bottom: 1rem;
+        }
+        .toggle-label-text { font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); }
+        .toggle-switch { position: relative; width: 50px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--gray-300); transition: 0.3s; border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 3px; bottom: 3px; background: white; transition: 0.3s; border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
+
+        /* Yes/No Radio Buttons */
+        .yes-no-group { display: flex; gap: 0.75rem; }
+        .yes-no-option {
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.75rem 1rem; background: var(--gray-50); border: 1.5px solid var(--gray-200);
+            border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 0.9375rem;
+            font-weight: 600; color: var(--text-secondary); user-select: none;
+        }
+        .yes-no-option:hover { border-color: var(--primary-light); color: var(--text-primary); }
+        .yes-no-option.selected-yes { border-color: var(--success); background: rgba(16,185,129,0.08); color: var(--success); }
+        .yes-no-option.selected-no { border-color: var(--danger); background: rgba(239,68,68,0.08); color: var(--danger); }
+        .yes-no-option i { font-size: 1rem; }
+        .yes-no-wrapper.error .yes-no-group { outline: 2px solid var(--danger); outline-offset: 4px; border-radius: 10px; }
+
+        /* T-shirt size pills */
+        .size-options { display: flex; gap: 0.625rem; flex-wrap: wrap; }
+        .size-option {
+            padding: 0.5rem 1.25rem; background: var(--gray-50);
+            border: 1.5px solid var(--gray-200); border-radius: 8px;
+            cursor: pointer; font-size: 0.9375rem; font-weight: 600;
+            color: var(--text-secondary); transition: all 0.2s; user-select: none;
+        }
+        .size-option:hover { border-color: var(--primary-light); color: var(--text-primary); }
+        .size-option.selected { border-color: var(--primary); background: rgba(250,128,114,0.1); color: var(--primary); }
+        .size-options.error { outline: 2px solid var(--danger); outline-offset: 4px; border-radius: 8px; }
+
+        /* Photo Upload */
+        .photo-upload-area {
+            border: 2px dashed var(--gray-300); border-radius: 12px;
+            padding: 2rem; text-align: center; cursor: pointer;
+            transition: all 0.2s; background: var(--gray-50);
+            position: relative;
+        }
+        .photo-upload-area:hover { border-color: var(--primary); background: rgba(250,128,114,0.03); }
+        .photo-upload-area.has-file { border-color: var(--success); background: rgba(16,185,129,0.05); }
+        .photo-upload-area.error { border-color: var(--danger); }
+        .photo-upload-area input[type="file"] { display: none; }
+        .photo-upload-icon { font-size: 2.5rem; color: var(--text-light); margin-bottom: 0.75rem; }
+        .photo-upload-area.has-file .photo-upload-icon { color: var(--success); }
+        .photo-upload-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .photo-upload-subtitle { font-size: 0.8125rem; color: var(--text-secondary); }
+        .photo-preview {
+            width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+            margin: 0 auto 0.75rem; display: block; border: 3px solid var(--success);
+        }
+        .photo-guidelines {
+            background: rgba(250,128,114,0.06); border: 1.5px solid var(--primary-light);
+            border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem;
+        }
+        .photo-guidelines-title {
+            font-size: 0.8125rem; font-weight: 700; color: var(--primary-dark);
+            margin-bottom: 0.625rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .photo-guidelines ol { padding-left: 1.25rem; }
+        .photo-guidelines li { font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.7; }
+
+        /* Info box */
+        .info-box {
+            display: flex; align-items: flex-start; gap: 0.625rem;
+            padding: 0.875rem 1rem; background: rgba(250,128,114,0.08);
+            border-radius: 10px; margin-bottom: 1rem; font-size: 0.8125rem;
+            color: var(--text-secondary); line-height: 1.5;
+        }
+        .info-box i { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+        .info-box a { color: var(--primary); text-decoration: underline; }
+
+        .info-box-warning {
+            display: flex; align-items: flex-start; gap: 0.625rem;
+            padding: 0.875rem 1rem; background: rgba(245,158,11,0.08);
+            border-radius: 10px; margin-bottom: 1rem; font-size: 0.8125rem;
+            color: var(--text-secondary); line-height: 1.5;
+        }
+        .info-box-warning i { color: var(--warning); flex-shrink: 0; margin-top: 2px; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.75rem 1.5rem; border-radius: 10px;
+            font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+            border: none; transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; box-shadow: 0 4px 12px rgba(250,128,114,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(250,128,114,0.4); }
+        .btn-secondary {
+            background: var(--white); color: var(--text-primary);
+            border: 1.5px solid var(--gray-200);
+        }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #34D399);
+            color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,0.4); }
+        .btn-small { padding: 0.5rem 1rem; font-size: 0.8125rem; }
+
+        .step-nav { display: flex; justify-content: space-between; margin-top: 2rem; }
+
+        .tags-container {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            padding: 1rem; background: var(--gray-50); border-radius: 10px;
+            min-height: 50px; border: 1.5px solid var(--gray-200);
+        }
+        .tags-container.error { border-color: var(--danger); }
+        .tag {
+            display: inline-flex; align-items: center; gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; border-radius: 20px; font-size: 0.8125rem; font-weight: 500;
+        }
+        .tag button {
+            background: rgba(255,255,255,0.3); border: none; color: white;
+            width: 18px; height: 18px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; transition: all 0.2s;
+        }
+        .tag button:hover { background: rgba(255,255,255,0.5); }
+        .tags-placeholder { color: var(--text-light); font-size: 0.875rem; }
+
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.625rem; }
+        .checkbox-grid.instruments-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+        .checkbox-item {
+            display: flex; align-items: center; gap: 0.625rem;
+            padding: 0.75rem 1rem; background: var(--gray-50);
+            border: 1.5px solid var(--gray-200); border-radius: 10px;
+            cursor: pointer; transition: all 0.2s; user-select: none;
+        }
+        .checkbox-item:hover { border-color: var(--primary-light); background: rgba(250,128,114,0.03); }
+        .checkbox-item.selected { border-color: var(--primary); background: rgba(250,128,114,0.08); }
+        .checkbox-item .check-icon {
+            width: 20px; height: 20px; border: 2px solid var(--gray-300); border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; color: transparent; transition: all 0.2s; flex-shrink: 0;
+        }
+        .checkbox-item.selected .check-icon {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-color: transparent; color: white;
+        }
+        .checkbox-item .check-label { font-size: 0.875rem; font-weight: 500; color: var(--text-primary); }
+
+        .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+        .genre-grid.error { outline: 2px solid var(--danger); outline-offset: 4px; border-radius: 8px; }
+        .genre-checkbox {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.625rem 0.875rem; background: var(--gray-50);
+            border: 1.5px solid var(--gray-200); border-radius: 8px;
+            cursor: pointer; transition: all 0.2s; user-select: none;
+        }
+        .genre-checkbox:hover { border-color: var(--primary-light); }
+        .genre-checkbox.selected { border-color: var(--primary); background: rgba(250,128,114,0.08); }
+        .genre-check-icon {
+            width: 18px; height: 18px; border: 2px solid var(--gray-300); border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.625rem; color: transparent; transition: all 0.2s; flex-shrink: 0;
+        }
+        .genre-checkbox.selected .genre-check-icon {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-color: transparent; color: white;
+        }
+        .genre-label { font-size: 0.8125rem; font-weight: 500; color: var(--text-primary); }
+
+        .cred-tags-container {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            padding: 0.75rem; background: var(--gray-50); border-radius: 10px;
+            min-height: 44px; border: 1.5px solid var(--gray-200);
+        }
+        .cred-tags-container.error { border-color: var(--danger); }
+        .cred-add-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .cred-add-row input {
+            flex: 1; padding: 0.625rem 0.875rem;
+            border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 0.875rem;
+        }
+        .cred-add-row input:focus { outline: none; border-color: var(--primary); }
+
+        .selected-instruments-summary {
+            margin-top: 1.5rem; padding: 1rem;
+            background: rgba(250,128,114,0.08); border-radius: 10px;
+            border: 1.5px solid var(--primary-light);
+        }
+        .selected-instruments-summary h4 { font-size: 0.875rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 0.5rem; }
+        .selected-instruments-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .selected-instrument-tag {
+            padding: 0.375rem 0.75rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; border-radius: 20px; font-size: 0.8125rem; font-weight: 500;
+        }
+
+        .instrument-progress {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.5rem; margin-bottom: 1.5rem; padding: 1rem;
+            background: var(--gray-50); border-radius: 10px;
+        }
+        .instrument-progress-text { font-size: 0.875rem; color: var(--text-secondary); }
+        .instrument-progress-text strong { color: var(--primary); }
+        .instrument-progress-dots { display: flex; gap: 0.375rem; }
+        .progress-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--gray-200); transition: all 0.2s;
+        }
+        .progress-dot.active { background: linear-gradient(135deg, var(--primary), var(--accent)); box-shadow: 0 0 0 3px rgba(250,128,114,0.2); }
+        .progress-dot.completed { background: var(--success); }
+
+        .current-instrument-header {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 12px; margin-bottom: 1.5rem; color: white;
+        }
+        .current-instrument-icon {
+            width: 40px; height: 40px; background: rgba(255,255,255,0.2);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem;
+        }
+        .current-instrument-name { font-size: 1.25rem; font-weight: 700; }
+
+        .age-note {
+            display: flex; align-items: flex-start; gap: 0.625rem;
+            padding: 0.875rem 1rem; background: rgba(250,128,114,0.08);
+            border-radius: 10px; margin-bottom: 1rem; font-size: 0.8125rem;
+            color: var(--text-secondary); line-height: 1.5;
+        }
+        .age-note i { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+
+        .comfort-slider-section { background: var(--gray-50); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .comfort-slider-label { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; }
+        .comfort-slider-description { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.25rem; }
+        .comfort-slider-wrapper { display: flex; align-items: center; gap: 1rem; }
+        .comfort-slider {
+            flex: 1; -webkit-appearance: none; appearance: none; height: 8px; border-radius: 4px;
+            background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--slider-progress, 50%), var(--gray-200) var(--slider-progress, 50%), var(--gray-200) 100%);
+            outline: none;
+        }
+        .comfort-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
+            border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent));
+            cursor: pointer; box-shadow: 0 2px 8px rgba(250,128,114,0.4); transition: transform 0.2s;
+        }
+        .comfort-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+        .comfort-slider::-moz-range-thumb {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            cursor: pointer; border: none;
+        }
+        .comfort-slider-value {
+            min-width: 48px; height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem; font-weight: 700;
+        }
+        .comfort-slider-labels { display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.6875rem; color: var(--text-light); }
+        .comfort-slider-note { margin-top: 1rem; padding: 0.75rem 1rem; background: rgba(16,185,129,0.08); border-radius: 8px; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; }
+
+        /* Section divider */
+        .section-divider { border: none; border-top: 2px solid var(--gray-100); margin: 1.5rem 0; }
+        .section-heading { font-size: 0.8125rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+
+        /* Review */
+        .review-section { margin-bottom: 1.5rem; }
+        .review-section-title {
+            font-size: 0.8125rem; font-weight: 700; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 0.75rem; padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-100);
+        }
+        .review-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        .review-item label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-light); margin-bottom: 0.125rem; }
+        .review-item p { font-size: 0.9375rem; color: var(--text-primary); }
+        .review-tags { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.25rem; }
+        .review-tag { padding: 0.25rem 0.625rem; background: var(--gray-100); border-radius: 12px; font-size: 0.75rem; color: var(--text-primary); font-weight: 500; }
+        .review-instrument-card { background: var(--gray-50); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+        .review-instrument-name { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; }
+        .review-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-light); }
+
+        /* Success */
+        .success-screen { text-align: center; padding: 3rem 2rem; }
+        .success-icon {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, var(--success), #34D399);
+            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: white; margin-bottom: 1.5rem;
+        }
+        .success-screen h2 { font-size: 1.75rem; color: var(--text-primary); margin-bottom: 0.75rem; }
+        .success-screen p { color: var(--text-secondary); font-size: 1rem; line-height: 1.6; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: white; border-radius: 12px; padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-xl); display: flex; align-items: center; gap: 0.75rem;
+            z-index: 3000; opacity: 0; transition: all 0.3s ease;
+            border-left: 4px solid var(--danger);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-icon { color: var(--danger); font-size: 1.25rem; }
+        .toast-message { font-size: 0.9375rem; color: var(--text-primary); font-weight: 500; }
+
+        @media (max-width: 768px) {
+            .survey-header { padding: 1.5rem 1rem; }
+            .survey-header h1 { font-size: 1.375rem; }
+            .survey-container { padding: 0 0.75rem; }
+            .step-card { padding: 1.25rem; }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+            .step-label { display: none; }
+            .progress-steps::before { left: 18px; right: 18px; }
+            .progress-bar-fill { left: 18px; }
+            .review-grid { grid-template-columns: 1fr; }
+            .yes-no-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="survey-header">
+        <div class="survey-header-logo">EH</div>
+        <h1>Teacher Information Survey</h1>
+        <p>Please complete all sections so we can build your teacher profile</p>
+        <div class="refresh-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong>⚠️ Don't lose your work!</strong> This survey cannot be saved as a draft. If you refresh, close, or navigate away from this page, you'll need to start over from the beginning.</span>
+        </div>
+    </div>
+
+    <div class="survey-container">
+        <!-- Progress -->
+        <div class="progress-section">
+            <div class="progress-steps">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+                <div class="progress-step active" data-step="1"><div class="step-circle">1</div><span class="step-label">Basic Info</span></div>
+                <div class="progress-step" data-step="2"><div class="step-circle">2</div><span class="step-label">Education</span></div>
+                <div class="progress-step" data-step="3"><div class="step-circle">3</div><span class="step-label">Preferences</span></div>
+                <div class="progress-step" data-step="4"><div class="step-circle">4</div><span class="step-label">Locations</span></div>
+                <div class="progress-step" data-step="5"><div class="step-circle">5</div><span class="step-label">Student Needs</span></div>
+                <div class="progress-step" data-step="6"><div class="step-circle">6</div><span class="step-label">Instruments</span></div>
+                <div class="progress-step" data-step="7"><div class="step-circle">7</div><span class="step-label">Details</span></div>
+                <div class="progress-step" data-step="8"><div class="step-circle">8</div><span class="step-label">Onboarding</span></div>
+                <div class="progress-step" data-step="9"><div class="step-circle">9</div><span class="step-label">Review</span></div>
+            </div>
+        </div>
+
+        <!-- Step 1: Basic Info -->
+        <div class="step-card active" id="step1">
+            <h2 class="step-title">Basic Information</h2>
+            <p class="step-subtitle">Let's start with your name and studio details</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">First Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="firstName">
+                    <div class="form-error" id="firstNameError">First name is required</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="lastName">
+                    <div class="form-error" id="lastNameError">Last name is required</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">State <span class="required">*</span></label>
+                    <select class="form-select" id="state"><option value="">Select state...</option></select>
+                    <div class="form-error" id="stateError">State is required</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Studio / Brand <span class="required">*</span></label>
+                    <select class="form-select" id="brand"><option value="">Select studio/brand...</option></select>
+                    <div class="form-hint">Select a state first to filter brands</div>
+                    <div class="form-error" id="brandError">Studio/Brand is required</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Gender</label>
+                    <select class="form-select" id="gender" onchange="toggleGenderOther()">
+                        <option value="">Select gender...</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Year Started at Studio</label>
+                    <input type="number" class="form-input" id="yearStarted" placeholder="e.g., 2020" min="1950" max="2030">
+                </div>
+            </div>
+            <div class="form-group" id="genderOtherGroup" style="display:none;">
+                <label class="form-label">Please Specify</label>
+                <input type="text" class="form-input" id="genderOther" placeholder="Please specify your gender">
+            </div>
+            <div class="step-nav">
+                <div></div>
+                <button class="btn btn-primary" onclick="nextStep(1)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 2: Education -->
+        <div class="step-card" id="step2">
+            <h2 class="step-title">Education & Strengths</h2>
+            <p class="step-subtitle">Tell us about your musical background</p>
+            <div class="toggle-group">
+                <span class="toggle-label-text">Do you have formal music education?</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="formalEducation" onchange="toggleEducationDetails()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div id="educationDetailsSection" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">Education Details <span class="required">*</span></label>
+                    <div class="edu-toolbar">
+                        <button type="button" class="edu-toolbar-btn" onclick="insertBullet()" title="Add bullet point"><i class="fas fa-list-ul"></i></button>
+                    </div>
+                    <textarea class="form-textarea" id="educationDetails" placeholder="• Bachelor of Music from Juilliard School&#10;• Master's in Music Performance from Berklee&#10;• 10+ years private teaching experience"></textarea>
+                    <div class="form-hint">Degrees, certifications, and notable training.</div>
+                    <div class="form-error" id="educationDetailsError">Education details are required when formal education is selected</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teaching Strength 1 <span class="required">*</span></label>
+                <input type="text" class="form-input" id="strength1" placeholder="e.g., Patient with beginners">
+                <div class="form-error" id="strength1Error">Teaching strength 1 is required</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teaching Strength 2 <span class="required">*</span></label>
+                <input type="text" class="form-input" id="strength2" placeholder="e.g., Strong classical technique">
+                <div class="form-error" id="strength2Error">Teaching strength 2 is required</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teaching Strength 3</label>
+                <input type="text" class="form-input" id="strength3" placeholder="e.g., Competition preparation">
+            </div>
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(2)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(2)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 3: Preferences -->
+        <div class="step-card" id="step3">
+            <h2 class="step-title">Teaching Preferences</h2>
+            <p class="step-subtitle">Let us know about your teaching preferences</p>
+            <div class="toggle-group">
+                <span class="toggle-label-text">Are you comfortable teaching special needs students?</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="specialNeeds">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Additional Notes</label>
+                <textarea class="form-textarea" id="additionalNotes" placeholder="Anything else you'd like us to know..."></textarea>
+            </div>
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(3)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(3)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 4: Locations -->
+        <div class="step-card" id="step4">
+            <h2 class="step-title">Locations & Languages</h2>
+            <p class="step-subtitle">Where do you teach and what languages do you teach in?</p>
+            <div class="form-group">
+                <label class="form-label">Cities You Teach In <span class="required">*</span></label>
+                <div class="form-hint" style="margin-bottom:0.75rem;">Select all cities where you're available to teach</div>
+                <div id="citiesCheckboxGrid" class="checkbox-grid"></div>
+                <div class="form-error" id="citiesError">Please select at least one city</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Languages You Teach In <span class="required">*</span></label>
+                <div class="form-hint" style="margin-bottom:0.75rem;">Select all languages you can teach in</div>
+                <div id="languagesCheckboxGrid" class="checkbox-grid"></div>
+                <div class="form-error" id="languagesError">Please select at least one language</div>
+            </div>
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(4)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(4)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 5: Student Learning Needs -->
+        <div class="step-card" id="step5">
+            <h2 class="step-title">Student Learning Needs</h2>
+            <p class="step-subtitle">Help us understand your comfort level with different learning styles</p>
+            <div class="comfort-slider-section">
+                <div class="comfort-slider-label">How comfortable are you teaching students with diverse learning needs?</div>
+                <div class="comfort-slider-description">This includes students with ADHD, autism spectrum, dyslexia, sensory processing differences, or other conditions that may require adapted teaching approaches.</div>
+                <div class="comfort-slider-wrapper">
+                    <input type="range" class="comfort-slider" id="learningNeedsComfort" min="1" max="10" value="5" oninput="updateSlider(this)">
+                    <div class="comfort-slider-value" id="sliderValueDisplay">5</div>
+                </div>
+                <div class="comfort-slider-labels"><span>1 - Less comfortable</span><span>10 - Very comfortable</span></div>
+                <div class="comfort-slider-note">
+                    <i class="fas fa-info-circle" style="margin-right:0.5rem;color:var(--success);"></i>
+                    There's no right or wrong answer — we want to match students with teachers who are the best fit for their needs.
+                </div>
+            </div>
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(5)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(5)">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 6: Select Instruments -->
+        <div class="step-card" id="step6">
+            <h2 class="step-title">Select Your Instruments</h2>
+            <p class="step-subtitle">Check all the instruments you teach — you'll fill in details for each one next</p>
+            <div class="form-group">
+                <label class="form-label">Instruments You Teach <span class="required">*</span></label>
+                <div class="form-hint" style="margin-bottom:0.75rem;">Select all that apply.</div>
+                <div id="instrumentsCheckboxGrid" class="checkbox-grid instruments-grid"></div>
+                <div class="form-error" id="instrumentsSelectError">Please select at least one instrument</div>
+            </div>
+            <div id="selectedInstrumentsSummary" class="selected-instruments-summary" style="display:none;">
+                <h4><i class="fas fa-music" style="margin-right:0.5rem;"></i> You've selected:</h4>
+                <div id="selectedInstrumentsList" class="selected-instruments-list"></div>
+            </div>
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(6)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(6)">Continue to Details <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 7: Instrument Details -->
+        <div class="step-card" id="step7">
+            <h2 class="step-title">Instrument Details</h2>
+            <p class="step-subtitle">Fill in the details for each instrument you teach</p>
+            <div class="instrument-progress" id="instrumentProgress">
+                <span class="instrument-progress-text">Instrument <strong id="currentInstrumentNum">1</strong> of <strong id="totalInstrumentNum">1</strong></span>
+                <div class="instrument-progress-dots" id="instrumentProgressDots"></div>
+            </div>
+            <div class="current-instrument-header" id="currentInstrumentHeader">
+                <div class="current-instrument-icon"><i class="fas fa-music"></i></div>
+                <div class="current-instrument-name" id="currentInstrumentName">Piano</div>
+            </div>
+            <div class="form-group" id="otherInstrumentGroup" style="display:none;">
+                <label class="form-label">Specify Instrument Name <span class="required">*</span></label>
+                <input type="text" class="form-input" id="otherInstrumentName" placeholder="e.g., Mandolin, Harmonica">
+                <div class="form-error" id="otherInstrumentError">Please specify the instrument name</div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Highest Teaching Level <span class="required">*</span></label>
+                    <select class="form-select" id="instrumentLevel">
+                        <option value="">Select level...</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                    <div class="form-error" id="instrumentLevelError">Teaching level is required</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Year Started Teaching <span class="required">*</span></label>
+                    <div class="form-hint" style="margin-top:0;margin-bottom:0.375rem;">At our studio or any studio</div>
+                    <input type="number" class="form-input" id="instrumentYearStarted" placeholder="e.g., 2015" min="1950" max="2030">
+                    <div class="form-error" id="instrumentYearError">Year started is required</div>
+                </div>
+            </div>
+            <div class="age-note">
+                <i class="fas fa-lightbulb"></i>
+                <span>Every instrument has a minimum teaching age. This opens opportunities to get more students and fill your schedule.</span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Youngest Age You'd Teach <span class="required">*</span></label>
+                <div class="form-hint" style="margin-top:0;margin-bottom:0.375rem;">What's the youngest age you'd be interested in teaching this instrument?</div>
+                <select class="form-select" id="instrumentYoungestAge">
+                    <option value="">Select age...</option>
+                </select>
+                <div class="form-error" id="instrumentAgeError">Youngest age is required</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Genres You Specialize In <span class="required">*</span></label>
+                <div class="form-hint" style="margin-top:0;margin-bottom:0.5rem;">Select all that apply.</div>
+                <div class="genre-grid" id="genreGrid"></div>
+                <div class="form-error" id="genreError">Please select at least one genre</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Certifications & Experience <span class="required">*</span></label>
+                <div class="form-hint" style="margin-top:0;margin-bottom:0.5rem;">Add certifications (e.g., MTAC, RCM) and notable experience (e.g., "10 years teaching")</div>
+                <div class="cred-tags-container" id="credentialsContainer">
+                    <span class="tags-placeholder">No certifications or experience added yet</span>
+                </div>
+                <div class="cred-add-row">
+                    <input type="text" id="credentialInput" placeholder="e.g., MTAC Certified, 15 years teaching" onkeypress="if(event.key==='Enter'){event.preventDefault();addCredential();}">
+                    <button type="button" class="btn btn-primary btn-small" onclick="addCredential()"><i class="fas fa-plus"></i> Add</button>
+                </div>
+                <div class="form-error" id="credentialError">Please add at least one certification or experience</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="form-textarea" id="instrumentNotes" placeholder="Any additional notes about teaching this instrument..."></textarea>
+            </div>
+            <div class="step-nav">
+                <button class="btn btn-secondary" id="instrumentBackBtn" onclick="prevInstrument()"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" id="instrumentNextBtn" onclick="nextInstrument()">Next Instrument <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 8: HR / Onboarding -->
+        <div class="step-card" id="step8">
+            <h2 class="step-title">Onboarding Information</h2>
+            <p class="step-subtitle">A few final details to get you set up with us</p>
+
+            <!-- Personal -->
+            <div class="section-heading"><i class="fas fa-user" style="margin-right:0.5rem;"></i>Personal</div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Date of Birth <span class="required">*</span></label>
+                    <input type="date" class="form-input" id="birthday">
+                    <div class="form-error" id="birthdayError">Date of birth is required</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">T-Shirt Size <span class="required">*</span></label>
+                    <div class="size-options" id="tshirtSizeOptions">
+                        <div class="size-option" onclick="selectSize(this, 'S')">S</div>
+                        <div class="size-option" onclick="selectSize(this, 'M')">M</div>
+                        <div class="size-option" onclick="selectSize(this, 'L')">L</div>
+                        <div class="size-option" onclick="selectSize(this, 'XL')">XL</div>
+                        <div class="size-option" onclick="selectSize(this, '2XL')">2XL</div>
+                    </div>
+                    <div class="form-error" id="tshirtSizeError">T-shirt size is required</div>
+                </div>
+            </div>
+
+            <hr class="section-divider">
+
+            <!-- Schedule & Availability -->
+            <div class="section-heading"><i class="fas fa-calendar-alt" style="margin-right:0.5rem;"></i>Schedule & Availability</div>
+
+            <div class="form-group">
+                <label class="form-label">Schedule Discussed <span class="required">*</span></label>
+                <div class="form-hint" style="margin-bottom:0.5rem;">If you will be working at multiple studios, please specify which studio you will be at on certain days.</div>
+                <textarea class="form-textarea" id="scheduleDiscussed" placeholder="e.g., Monday & Wednesday: Murray studio, 3pm–7pm&#10;Saturday: Sandy studio, 10am–2pm"></textarea>
+                <div class="form-error" id="scheduleDiscussedError">Schedule is required</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Available Start Date <span class="required">*</span></label>
+                    <input type="date" class="form-input" id="availableStartDate">
+                    <div class="form-error" id="availableStartDateError">Start date is required</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Hourly Pay Rate Discussed <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="hourlyPayRate" placeholder="e.g., $18.50/hr">
+                    <div class="form-error" id="hourlyPayRateError">Pay rate is required</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Observation Availability <span class="required">*</span></label>
+                <div class="form-hint" style="margin-bottom:0.5rem;">You will need to observe a certain number of lessons. Please list the days and times you are available to come in and complete those.</div>
+                <textarea class="form-textarea" id="observeLessonsAvailability" placeholder="e.g., Tuesdays after 4pm, any Saturday morning"></textarea>
+                <div class="form-error" id="observeLessonsError">Observation availability is required</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Open to Subbing? <span class="required">*</span></label>
+                <div class="form-hint" style="margin-bottom:0.5rem;">From time to time, some of our teachers reach out to find substitutes. Would you like to be added to our list to be contacted for subbing opportunities?</div>
+                <div class="yes-no-wrapper" id="subbingWrapper">
+                    <div class="yes-no-group">
+                        <div class="yes-no-option" onclick="selectYesNo('subbing', true, this)"><i class="fas fa-check-circle"></i> Yes</div>
+                        <div class="yes-no-option" onclick="selectYesNo('subbing', false, this)"><i class="fas fa-times-circle"></i> No</div>
+                    </div>
+                </div>
+                <div class="form-error" id="subbingError">Please select an option</div>
+            </div>
+
+            <hr class="section-divider">
+
+            <!-- Setup & Onboarding -->
+            <div class="section-heading"><i class="fas fa-clipboard-check" style="margin-right:0.5rem;"></i>Setup & Onboarding</div>
+
+            <div class="form-group">
+                <label class="form-label">Have you logged into your work email yet? <span class="required">*</span></label>
+                <div class="yes-no-wrapper" id="workEmailWrapper">
+                    <div class="yes-no-group">
+                        <div class="yes-no-option" onclick="selectYesNo('workEmail', true, this)"><i class="fas fa-check-circle"></i> Yes</div>
+                        <div class="yes-no-option" onclick="selectYesNo('workEmail', false, this)"><i class="fas fa-times-circle"></i> No</div>
+                    </div>
+                </div>
+                <div class="form-error" id="workEmailError">Please select an option</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Have you completed your background check? <span class="required">*</span></label>
+                <div class="info-box-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>You should have already received an email to your work email from a company called <strong>VICTIG</strong> to complete your background check.</span>
+                </div>
+                <div class="yes-no-wrapper" id="backgroundCheckWrapper">
+                    <div class="yes-no-group">
+                        <div class="yes-no-option" onclick="selectYesNo('backgroundCheck', true, this)"><i class="fas fa-check-circle"></i> Yes</div>
+                        <div class="yes-no-option" onclick="selectYesNo('backgroundCheck', false, this)"><i class="fas fa-times-circle"></i> No</div>
+                    </div>
+                </div>
+                <div class="form-error" id="backgroundCheckError">Please select an option</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Zoom Personal Room Link <span class="required">*</span></label>
+                <div class="info-box">
+                    <i class="fas fa-video"></i>
+                    <span>In cases of extreme weather, we use Zoom to teach lessons. Go to <strong>zoom.us</strong> → Sign up free with your work email → Meetings → Personal Room → Invite Link.<br><br>
+                    Need help? <a href="https://www.youtube.com/watch?v=yNA9LNuc_b4" target="_blank">Watch this short video <i class="fas fa-external-link-alt" style="font-size:0.75rem;"></i></a></span>
+                </div>
+                <input type="url" class="form-input" id="zoomPersonalLink" placeholder="https://us05web.zoom.us/j/...">
+                <div class="form-error" id="zoomLinkError">Zoom personal room link is required</div>
+            </div>
+
+            <hr class="section-divider">
+
+            <!-- Bio & Photo -->
+            <div class="section-heading"><i class="fas fa-camera" style="margin-right:0.5rem;"></i>Bio & Photo</div>
+
+            <div class="form-group">
+                <label class="form-label">Anything else we should be aware of when talking to potential clients about you as a teacher?</label>
+                <textarea class="form-textarea" id="additionalClientNotes" placeholder="e.g., I specialize in teaching adults returning to the piano, I have performed professionally with..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Profile Photo <span class="required">*</span></label>
+                <div class="photo-guidelines">
+                    <div class="photo-guidelines-title"><i class="fas fa-camera"></i> Photo Guidelines</div>
+                    <ol>
+                        <li>Photo must have been taken within the last two years</li>
+                        <li>Choose a neutral background (e.g., white wall) — not your car, bathroom, or bedroom</li>
+                        <li>Smile and look directly at the camera. Don't angle from above or below</li>
+                        <li>Ideally waist-up so your face is clearly visible</li>
+                        <li>Please don't take a selfie — have someone else take it or set up 5–10 steps away</li>
+                        <li>Make sure the photo is not blurry</li>
+                        <li>You should be the only person in the photo</li>
+                    </ol>
+                    <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-secondary);">Questions or need help? Email <a href="mailto:hr@thepianoplaceutah.com" style="color:var(--primary);">hr@thepianoplaceutah.com</a></div>
+                </div>
+                <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoFileInput').click()">
+                    <input type="file" id="photoFileInput" accept="image/*" onchange="handlePhotoSelect(this)">
+                    <div id="photoUploadContent">
+                        <div class="photo-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <div class="photo-upload-title">Click to upload your photo</div>
+                        <div class="photo-upload-subtitle">JPG, PNG or WEBP · Max 10MB</div>
+                    </div>
+                </div>
+                <div class="form-error" id="photoError">Please upload a profile photo</div>
+            </div>
+
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(8)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" onclick="nextStep(8)">Review <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 9: Review & Submit -->
+        <div class="step-card" id="step9">
+            <h2 class="step-title">Review Your Information</h2>
+            <p class="step-subtitle">Please review everything before submitting</p>
+            <div id="reviewContent"></div>
+            <div class="step-nav">
+                <button class="btn btn-secondary" onclick="prevStep(9)"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-success" id="submitBtn" onclick="submitSurvey()">
+                    <i class="fas fa-check"></i> Submit Survey
+                </button>
+            </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div class="step-card success-screen" id="successScreen">
+            <div class="success-icon"><i class="fas fa-check"></i></div>
+            <h2>Thank You!</h2>
+            <p>Your teacher profile has been submitted successfully.<br>Our team will review your information and approve your profile shortly.</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <i class="fas fa-exclamation-circle toast-icon"></i>
+        <span class="toast-message"></span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://kvyvjwepfrqqkvyyutdw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2eXZqd2VwZnJxcWt2eXl1dGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjgyOTgsImV4cCI6MjA4MjgwNDI5OH0.ZayLxzQCEFENvQ9FwpLm4x2le2Y9kJvSslX8DVRzAh8';
+
+        let supabaseClient;
+        let currentStep = 1;
+        const totalSteps = 9;
+
+        let cities = [];
+        let languages = [];
+        let selectedInstruments = [];
+        let instruments = [];
+        let currentInstrumentIndex = 0;
+
+        // Onboarding state
+        let tshirtSize = '';
+        let subbingAnswer = null;
+        let workEmailAnswer = null;
+        let backgroundCheckAnswer = null;
+        let selectedPhotoFile = null;
+
+        const INSTRUMENT_OPTIONS = ['Banjo','Bass','Cello','Clarinet','Drums','Flute','Guitar','Piano','Saxophone','Trumpet','Ukulele','Viola','Violin','Voice','Other'];
+        const GENRE_OPTIONS = ['Classical','Pop/Contemporary','Rock','Jazz','Worship','Blues','Country','Musical Theater','Folk/Indie','World'];
+        const LANGUAGE_OPTIONS = ['English','Spanish','Mandarin','Cantonese','Korean','Japanese','Vietnamese','Tagalog','French','German','Other'];
+        const PIANO_UKULELE = ['Piano','Ukulele'];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            updateProgress();
+            loadBrandsAndStates();
+            renderLanguageCheckboxes();
+            renderInstrumentCheckboxes();
+            renderGenreCheckboxes();
+            const slider = document.getElementById('learningNeedsComfort');
+            if (slider) updateSlider(slider);
+        });
+
+        function updateSlider(slider) {
+            const value = slider.value;
+            const progress = ((value - 1) / 9) * 100;
+            slider.style.setProperty('--slider-progress', progress + '%');
+            document.getElementById('sliderValueDisplay').textContent = value;
+        }
+
+        // ============ YES/NO BUTTONS ============
+        function selectYesNo(field, value, el) {
+            const wrapper = el.closest('.yes-no-group');
+            wrapper.querySelectorAll('.yes-no-option').forEach(opt => {
+                opt.classList.remove('selected-yes', 'selected-no');
+            });
+            if (value) {
+                el.classList.add('selected-yes');
+            } else {
+                el.classList.add('selected-no');
+            }
+            if (field === 'subbing') subbingAnswer = value;
+            if (field === 'workEmail') workEmailAnswer = value;
+            if (field === 'backgroundCheck') backgroundCheckAnswer = value;
+        }
+
+        // ============ T-SHIRT SIZE ============
+        function selectSize(el, size) {
+            document.querySelectorAll('.size-option').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            tshirtSize = size;
+        }
+
+        // ============ PHOTO UPLOAD ============
+        function handlePhotoSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('Photo must be under 10MB');
+                return;
+            }
+            selectedPhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const area = document.getElementById('photoUploadArea');
+                area.classList.add('has-file');
+                document.getElementById('photoUploadContent').innerHTML = `
+                    <img src="${e.target.result}" class="photo-preview" alt="Preview">
+                    <div class="photo-upload-title" style="color:var(--success);">Photo selected!</div>
+                    <div class="photo-upload-subtitle">${file.name} · Click to change</div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ============ SUPABASE DATA ============
+        let allStudios = [];
+
+        async function loadBrandsAndStates() {
+            try {
+                const result = await supabaseClient.from('studios').select('brand, state, city, brands:brand_id(name)').order('city');
+                if (result.error) throw result.error;
+                allStudios = (result.data || []).map(s => ({
+                    brand: s.brands?.name || s.brand || null,
+                    state: s.state,
+                    city: s.city
+                }));
+                const states = [...new Set(allStudios.map(s => s.state).filter(Boolean))].sort();
+                const stateSelect = document.getElementById('state');
+                states.forEach(st => {
+                    const opt = document.createElement('option');
+                    opt.value = st; opt.textContent = st;
+                    stateSelect.appendChild(opt);
+                });
+                document.getElementById('state').addEventListener('change', onStateChange);
+            } catch (error) {
+                console.error('Error loading brands:', error);
+            }
+        }
+
+        function onStateChange() {
+            const state = document.getElementById('state').value;
+            const brandSelect = document.getElementById('brand');
+            brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
+            cities = []; renderCityCheckboxes();
+            if (!state) return;
+            const brandsInState = [...new Set(allStudios.filter(s => s.state === state).map(s => s.brand).filter(Boolean))].sort();
+            brandsInState.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b; opt.textContent = b;
+                brandSelect.appendChild(opt);
+            });
+            brandSelect.addEventListener('change', onBrandChange);
+        }
+
+        function onBrandChange() {
+            cities = []; renderCityCheckboxes();
+        }
+
+        function renderCityCheckboxes() {
+            const state = document.getElementById('state').value;
+            const brand = document.getElementById('brand').value;
+            const grid = document.getElementById('citiesCheckboxGrid');
+            if (!state || !brand) {
+                grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">Select a state and brand first</p>';
+                return;
+            }
+            const citiesForBrand = [...new Set(allStudios.filter(s => s.state === state && s.brand === brand).map(s => s.city).filter(Boolean))].sort();
+            if (citiesForBrand.length === 0) {
+                grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">No cities found for this brand</p>';
+                return;
+            }
+            grid.innerHTML = citiesForBrand.map(city => `
+                <div class="checkbox-item ${cities.includes(city) ? 'selected' : ''}" onclick="toggleCityCheckbox(this, '${city}')">
+                    <span class="check-icon"><i class="fas fa-check"></i></span>
+                    <span class="check-label">${city}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleCityCheckbox(el, city) {
+            const idx = cities.indexOf(city);
+            if (idx === -1) { cities.push(city); el.classList.add('selected'); }
+            else { cities.splice(idx, 1); el.classList.remove('selected'); }
+        }
+
+        function renderLanguageCheckboxes() {
+            const grid = document.getElementById('languagesCheckboxGrid');
+            grid.innerHTML = LANGUAGE_OPTIONS.map(lang => `
+                <div class="checkbox-item ${languages.includes(lang) ? 'selected' : ''}" onclick="toggleLanguageCheckbox(this, '${lang}')">
+                    <span class="check-icon"><i class="fas fa-check"></i></span>
+                    <span class="check-label">${lang}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleLanguageCheckbox(el, lang) {
+            const idx = languages.indexOf(lang);
+            if (idx === -1) { languages.push(lang); el.classList.add('selected'); }
+            else { languages.splice(idx, 1); el.classList.remove('selected'); }
+        }
+
+        function renderInstrumentCheckboxes() {
+            const grid = document.getElementById('instrumentsCheckboxGrid');
+            grid.innerHTML = INSTRUMENT_OPTIONS.map(inst => `
+                <div class="checkbox-item ${selectedInstruments.includes(inst) ? 'selected' : ''}" onclick="toggleInstrumentCheckbox(this, '${inst}')">
+                    <span class="check-icon"><i class="fas fa-check"></i></span>
+                    <span class="check-label">${inst}</span>
+                </div>
+            `).join('');
+            updateSelectedInstrumentsSummary();
+        }
+
+        function toggleInstrumentCheckbox(el, inst) {
+            const idx = selectedInstruments.indexOf(inst);
+            if (idx === -1) { selectedInstruments.push(inst); el.classList.add('selected'); }
+            else { selectedInstruments.splice(idx, 1); el.classList.remove('selected'); }
+            updateSelectedInstrumentsSummary();
+        }
+
+        function updateSelectedInstrumentsSummary() {
+            const summary = document.getElementById('selectedInstrumentsSummary');
+            const list = document.getElementById('selectedInstrumentsList');
+            if (selectedInstruments.length === 0) { summary.style.display = 'none'; }
+            else {
+                summary.style.display = 'block';
+                list.innerHTML = selectedInstruments.map(inst => `<span class="selected-instrument-tag">${inst}</span>`).join('');
+            }
+        }
+
+        function renderGenreCheckboxes() {
+            const grid = document.getElementById('genreGrid');
+            grid.innerHTML = GENRE_OPTIONS.map(g => `
+                <div class="genre-checkbox" onclick="toggleGenreCheckbox(this, '${g}')">
+                    <span class="genre-check-icon"><i class="fas fa-check"></i></span>
+                    <span class="genre-label">${g}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleGenreCheckbox(el) { el.classList.toggle('selected'); }
+
+        function getSelectedGenres() {
+            const selected = [];
+            document.querySelectorAll('#genreGrid .genre-checkbox.selected').forEach(el => {
+                selected.push(el.querySelector('.genre-label').textContent);
+            });
+            return selected;
+        }
+
+        function setSelectedGenres(genres) {
+            document.querySelectorAll('#genreGrid .genre-checkbox').forEach(el => {
+                const label = el.querySelector('.genre-label').textContent;
+                if (genres.includes(label)) el.classList.add('selected');
+                else el.classList.remove('selected');
+            });
+        }
+
+        // ============ CREDENTIALS ============
+        let currentCredentials = [];
+
+        function addCredential() {
+            const input = document.getElementById('credentialInput');
+            const v = input.value.trim();
+            if (v && !currentCredentials.includes(v)) {
+                currentCredentials.push(v);
+                renderCredentials();
+                input.value = '';
+            }
+            input.focus();
+        }
+
+        function removeCredential(idx) {
+            currentCredentials.splice(idx, 1);
+            renderCredentials();
+        }
+
+        function renderCredentials() {
+            const container = document.getElementById('credentialsContainer');
+            if (currentCredentials.length === 0) {
+                container.innerHTML = '<span class="tags-placeholder">No certifications or experience added yet</span>';
+            } else {
+                container.innerHTML = currentCredentials.map((c, i) => `
+                    <span class="tag">${esc(c)}<button type="button" onclick="removeCredential(${i})"><i class="fas fa-times"></i></button></span>
+                `).join('');
+            }
+        }
+
+        function insertBullet() {
+            const ta = document.getElementById('educationDetails');
+            const start = ta.selectionStart;
+            const val = ta.value;
+            const before = val.substring(0, start);
+            const after = val.substring(start);
+            const bullet = (start === 0 || before.endsWith('\n')) ? '• ' : '\n• ';
+            ta.value = before + bullet + after;
+            ta.selectionStart = ta.selectionEnd = start + bullet.length;
+            ta.focus();
+        }
+
+        // ============ NAVIGATION ============
+        function updateProgress() {
+            const steps = document.querySelectorAll('.progress-step');
+            steps.forEach((step, idx) => {
+                const stepNum = idx + 1;
+                step.classList.remove('active', 'completed');
+                if (stepNum === currentStep) {
+                    step.classList.add('active');
+                } else if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                    step.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>';
+                } else {
+                    step.querySelector('.step-circle').textContent = stepNum;
+                }
+            });
+            const fill = document.getElementById('progressBarFill');
+            const totalWidth = document.querySelector('.progress-steps').offsetWidth - 48;
+            const progress = ((currentStep - 1) / (totalSteps - 1)) * totalWidth;
+            fill.style.width = `${progress}px`;
+        }
+
+        function goToStep(step) {
+            document.querySelectorAll('.step-card').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+            currentStep = step;
+            updateProgress();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function nextStep(fromStep) {
+            if (!validateStep(fromStep)) return;
+            if (fromStep === 6) initializeInstrumentDetails();
+            if (fromStep === 8) buildReview();
+            goToStep(fromStep + 1);
+        }
+
+        function prevStep(fromStep) {
+            goToStep(fromStep - 1);
+        }
+
+        // ============ INSTRUMENT DETAILS FLOW ============
+        function initializeInstrumentDetails() {
+            instruments = selectedInstruments.map(name => ({
+                instrument: name, instrument_other: '', teacher_level: '',
+                youngest_age_preference: '', selectedGenres: [],
+                year_started: '', credentials: [], notes: ''
+            }));
+            currentInstrumentIndex = 0;
+            loadCurrentInstrument();
+        }
+
+        function loadCurrentInstrument() {
+            const inst = instruments[currentInstrumentIndex];
+            const isOther = inst.instrument === 'Other';
+            document.getElementById('currentInstrumentNum').textContent = currentInstrumentIndex + 1;
+            document.getElementById('totalInstrumentNum').textContent = instruments.length;
+            const dotsContainer = document.getElementById('instrumentProgressDots');
+            dotsContainer.innerHTML = instruments.map((_, i) => {
+                let dotClass = 'progress-dot';
+                if (i < currentInstrumentIndex) dotClass += ' completed';
+                else if (i === currentInstrumentIndex) dotClass += ' active';
+                return `<div class="${dotClass}"></div>`;
+            }).join('');
+            const displayName = isOther && inst.instrument_other ? inst.instrument_other : inst.instrument;
+            document.getElementById('currentInstrumentName').textContent = displayName;
+            document.getElementById('otherInstrumentGroup').style.display = isOther ? 'block' : 'none';
+            document.getElementById('otherInstrumentName').value = inst.instrument_other || '';
+            document.getElementById('instrumentLevel').value = inst.teacher_level || '';
+            document.getElementById('instrumentYearStarted').value = inst.year_started || '';
+            updateAgeOptions(inst.instrument);
+            document.getElementById('instrumentYoungestAge').value = inst.youngest_age_preference || '';
+            setSelectedGenres(inst.selectedGenres || []);
+            currentCredentials = [...(inst.credentials || [])];
+            renderCredentials();
+            document.getElementById('instrumentNotes').value = inst.notes || '';
+            const backBtn = document.getElementById('instrumentBackBtn');
+            const nextBtn = document.getElementById('instrumentNextBtn');
+            backBtn.innerHTML = currentInstrumentIndex === 0 ? '<i class="fas fa-arrow-left"></i> Back to Selection' : '<i class="fas fa-arrow-left"></i> Previous';
+            nextBtn.innerHTML = currentInstrumentIndex === instruments.length - 1 ? 'Continue <i class="fas fa-arrow-right"></i>' : 'Next Instrument <i class="fas fa-arrow-right"></i>';
+        }
+
+        function updateAgeOptions(instrumentName) {
+            const select = document.getElementById('instrumentYoungestAge');
+            const isPianoUke = PIANO_UKULELE.includes(instrumentName);
+            const maxAge = isPianoUke ? 5 : 7;
+            select.innerHTML = '<option value="">Select age...</option>';
+            for (let a = 3; a <= maxAge; a++) {
+                const opt = document.createElement('option');
+                opt.value = a; opt.textContent = a;
+                select.appendChild(opt);
+            }
+            const noneOpt = document.createElement('option');
+            noneOpt.value = 'none'; noneOpt.textContent = 'None of the above';
+            select.appendChild(noneOpt);
+        }
+
+        function saveCurrentInstrument() {
+            const inst = instruments[currentInstrumentIndex];
+            inst.instrument_other = document.getElementById('otherInstrumentName').value.trim();
+            inst.teacher_level = document.getElementById('instrumentLevel').value;
+            inst.year_started = document.getElementById('instrumentYearStarted').value;
+            inst.youngest_age_preference = document.getElementById('instrumentYoungestAge').value;
+            inst.selectedGenres = getSelectedGenres();
+            inst.credentials = [...currentCredentials];
+            inst.notes = document.getElementById('instrumentNotes').value;
+        }
+
+        function validateCurrentInstrument() {
+            clearErrors();
+            let valid = true;
+            const inst = instruments[currentInstrumentIndex];
+            if (inst.instrument === 'Other') {
+                const otherName = document.getElementById('otherInstrumentName').value.trim();
+                if (!otherName) { showError('otherInstrumentName', 'otherInstrumentError'); valid = false; }
+            }
+            if (!document.getElementById('instrumentLevel').value) { showError('instrumentLevel', 'instrumentLevelError'); valid = false; }
+            if (!document.getElementById('instrumentYearStarted').value) { showError('instrumentYearStarted', 'instrumentYearError'); valid = false; }
+            if (!document.getElementById('instrumentYoungestAge').value) { showError('instrumentYoungestAge', 'instrumentAgeError'); valid = false; }
+            if (getSelectedGenres().length === 0) { document.getElementById('genreGrid').classList.add('error'); document.getElementById('genreError').classList.add('visible'); valid = false; }
+            if (currentCredentials.length === 0) { document.getElementById('credentialsContainer').classList.add('error'); document.getElementById('credentialError').classList.add('visible'); valid = false; }
+            if (!valid) showToast('Please fill in all required fields');
+            return valid;
+        }
+
+        function nextInstrument() {
+            if (!validateCurrentInstrument()) return;
+            saveCurrentInstrument();
+            if (currentInstrumentIndex === instruments.length - 1) {
+                goToStep(8);
+            } else {
+                currentInstrumentIndex++;
+                loadCurrentInstrument();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevInstrument() {
+            saveCurrentInstrument();
+            if (currentInstrumentIndex === 0) { goToStep(6); }
+            else { currentInstrumentIndex--; loadCurrentInstrument(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        }
+
+        // ============ VALIDATION ============
+        function validateStep(step) {
+            clearErrors();
+            let valid = true;
+
+            if (step === 1) {
+                if (!val('firstName')) { showError('firstName', 'firstNameError'); valid = false; }
+                if (!val('lastName')) { showError('lastName', 'lastNameError'); valid = false; }
+                if (!val('brand')) { showError('brand', 'brandError'); valid = false; }
+                if (!val('state')) { showError('state', 'stateError'); valid = false; }
+            }
+            if (step === 2) {
+                if (document.getElementById('formalEducation').checked && !val('educationDetails')) {
+                    showError('educationDetails', 'educationDetailsError'); valid = false;
+                }
+                if (!val('strength1')) { showError('strength1', 'strength1Error'); valid = false; }
+                if (!val('strength2')) { showError('strength2', 'strength2Error'); valid = false; }
+            }
+            if (step === 4) {
+                if (cities.length === 0) { document.getElementById('citiesError').classList.add('visible'); valid = false; }
+                if (languages.length === 0) { document.getElementById('languagesError').classList.add('visible'); valid = false; }
+            }
+            if (step === 6) {
+                if (selectedInstruments.length === 0) { document.getElementById('instrumentsSelectError').classList.add('visible'); valid = false; }
+            }
+            if (step === 8) {
+                if (!val('birthday')) { showError('birthday', 'birthdayError'); valid = false; }
+                if (!tshirtSize) { document.getElementById('tshirtSizeError').classList.add('visible'); valid = false; }
+                if (!val('scheduleDiscussed')) { showError('scheduleDiscussed', 'scheduleDiscussedError'); valid = false; }
+                if (!val('availableStartDate')) { showError('availableStartDate', 'availableStartDateError'); valid = false; }
+                if (!val('hourlyPayRate')) { showError('hourlyPayRate', 'hourlyPayRateError'); valid = false; }
+                if (!val('observeLessonsAvailability')) { showError('observeLessonsAvailability', 'observeLessonsError'); valid = false; }
+                if (subbingAnswer === null) { document.getElementById('subbingError').classList.add('visible'); valid = false; }
+                if (workEmailAnswer === null) { document.getElementById('workEmailError').classList.add('visible'); valid = false; }
+                if (backgroundCheckAnswer === null) { document.getElementById('backgroundCheckError').classList.add('visible'); valid = false; }
+                if (!val('zoomPersonalLink')) { showError('zoomPersonalLink', 'zoomLinkError'); valid = false; }
+                if (!selectedPhotoFile) { document.getElementById('photoError').classList.add('visible'); document.getElementById('photoUploadArea').classList.add('error'); valid = false; }
+            }
+
+            if (!valid) showToast('Please fill in all required fields');
+            return valid;
+        }
+
+        function val(id) { return document.getElementById(id).value.trim(); }
+        function showError(inputId, errorId) {
+            document.getElementById(inputId).classList.add('error');
+            document.getElementById(errorId).classList.add('visible');
+        }
+        function clearErrors() {
+            document.querySelectorAll('.form-input.error, .form-select.error, .form-textarea.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.form-error.visible').forEach(el => el.classList.remove('visible'));
+            document.querySelectorAll('.tags-container.error, .cred-tags-container.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.genre-grid.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.size-options.error').forEach(el => el.classList.remove('error'));
+            document.querySelector('#photoUploadArea.error')?.classList.remove('error');
+        }
+
+        function toggleGenderOther() {
+            const genderVal = document.getElementById('gender').value;
+            document.getElementById('genderOtherGroup').style.display = genderVal === 'Other' ? 'block' : 'none';
+            if (genderVal !== 'Other') document.getElementById('genderOther').value = '';
+        }
+
+        function toggleEducationDetails() {
+            const isChecked = document.getElementById('formalEducation').checked;
+            document.getElementById('educationDetailsSection').style.display = isChecked ? 'block' : 'none';
+            if (!isChecked) document.getElementById('educationDetails').value = '';
+        }
+
+        function esc(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        // ============ REVIEW ============
+        function buildReview() {
+            const genderVal = val('gender');
+            const genderOtherVal = val('genderOther');
+            let genderDisplay = 'Not specified';
+            if (genderVal === 'Other' && genderOtherVal) genderDisplay = genderOtherVal;
+            else if (genderVal) genderDisplay = genderVal;
+
+            const photoPreviewSrc = selectedPhotoFile ? URL.createObjectURL(selectedPhotoFile) : null;
+
+            const html = `
+                <div class="review-section">
+                    <div class="review-section-title">Basic Information</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Name</label><p>${esc(val('firstName'))} ${esc(val('lastName'))}</p></div>
+                        <div class="review-item"><label>Studio/Brand</label><p>${esc(val('brand'))}</p></div>
+                        <div class="review-item"><label>State</label><p>${esc(val('state'))}</p></div>
+                        <div class="review-item"><label>Gender</label><p>${esc(genderDisplay)}</p></div>
+                        <div class="review-item"><label>Year Started</label><p>${val('yearStarted') || 'Not specified'}</p></div>
+                    </div>
+                </div>
+                <div class="review-section">
+                    <div class="review-section-title">Education & Strengths</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Formal Education</label><p>${document.getElementById('formalEducation').checked ? 'Yes' : 'No'}</p></div>
+                        ${document.getElementById('formalEducation').checked ? `<div class="review-item" style="grid-column:1/-1;"><label>Education Details</label><p style="white-space:pre-line;">${esc(val('educationDetails'))}</p></div>` : ''}
+                        ${val('strength1') ? `<div class="review-item"><label>Strength 1</label><p>${esc(val('strength1'))}</p></div>` : ''}
+                        ${val('strength2') ? `<div class="review-item"><label>Strength 2</label><p>${esc(val('strength2'))}</p></div>` : ''}
+                        ${val('strength3') ? `<div class="review-item"><label>Strength 3</label><p>${esc(val('strength3'))}</p></div>` : ''}
+                    </div>
+                </div>
+                <div class="review-section">
+                    <div class="review-section-title">Teaching Preferences</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Special Needs</label><p>${document.getElementById('specialNeeds').checked ? 'Yes' : 'No'}</p></div>
+                        ${val('additionalNotes') ? `<div class="review-item" style="grid-column:1/-1;"><label>Additional Notes</label><p>${esc(val('additionalNotes'))}</p></div>` : ''}
+                    </div>
+                </div>
+                <div class="review-section">
+                    <div class="review-section-title">Student Learning Needs</div>
+                    <div class="review-grid">
+                        <div class="review-item"><label>Comfort Level</label><p>${val('learningNeedsComfort')} / 10</p></div>
+                    </div>
+                </div>
+                <div class="review-section">
+                    <div class="review-section-title">Locations & Languages</div>
+                    <div class="review-item" style="margin-bottom:0.75rem;">
+                        <label>Cities</label>
+                        <div class="review-tags">${cities.map(c => `<span class="review-tag">${esc(c)}</span>`).join('')}</div>
+                    </div>
+                    <div class="review-item">
+                        <label>Languages</label>
+                        <div class="review-tags">${languages.map(l => `<span class="review-tag">${esc(l)}</span>`).join('')}</div>
+                    </div>
+                </div>
+                <div class="review-section">
+                    <div class="review-section-title">Instruments (${instruments.length})</div>
+                    ${instruments.map(inst => {
+                        const instName = inst.instrument === 'Other' ? (inst.instrument_other || 'Other') : inst.instrument;
+                        const ageDisplay = inst.youngest_age_preference === 'none' ? 'N/A' : inst.youngest_age_preference;
+                        return `
+                        <div class="review-instrument-card">
+                            <div class="review-instrument-name">${esc(instName)}</div>
+                            <div class="review-grid">
+                                <div class="review-item"><label>Level</label><p>${esc(inst.teacher_level)}</p></div>
+                                <div class="review-item"><label>Youngest Age</label><p>${esc(ageDisplay)}</p></div>
+                                <div class="review-item"><label>Year Started</label><p>${esc(inst.year_started)}</p></div>
+                                <div class="review-item" style="grid-column:1/-1;"><label>Genres</label>
+                                    <div class="review-tags">${(inst.selectedGenres||[]).map(g=>`<span class="review-tag">${esc(g)}</span>`).join('')}</div>
+                                </div>
+                                <div class="review-item" style="grid-column:1/-1;"><label>Certifications & Experience</label>
+                                    <div class="review-tags">${(inst.credentials||[]).map(c=>`<span class="review-tag">${esc(c)}</span>`).join('')}</div>
+                                </div>
+                                ${inst.notes ? `<div class="review-item" style="grid-column:1/-1;"><label>Notes</label><p>${esc(inst.notes)}</p></div>` : ''}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="review-section">
+                    <div class="review-section-title">Onboarding</div>
+                    ${photoPreviewSrc ? `<div style="margin-bottom:1rem;"><label style="font-size:0.75rem;font-weight:600;color:var(--text-light);display:block;margin-bottom:0.375rem;">Profile Photo</label><img src="${photoPreviewSrc}" class="review-photo" alt="Profile photo"></div>` : ''}
+                    <div class="review-grid">
+                        <div class="review-item"><label>Date of Birth</label><p>${val('birthday') || 'Not specified'}</p></div>
+                        <div class="review-item"><label>T-Shirt Size</label><p>${esc(tshirtSize)}</p></div>
+                        <div class="review-item"><label>Available Start Date</label><p>${val('availableStartDate')}</p></div>
+                        <div class="review-item"><label>Hourly Pay Rate</label><p>${esc(val('hourlyPayRate'))}</p></div>
+                        <div class="review-item"><label>Open to Subbing</label><p>${subbingAnswer ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item"><label>Logged Into Work Email</label><p>${workEmailAnswer ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item"><label>Background Check Completed</label><p>${backgroundCheckAnswer ? 'Yes' : 'No'}</p></div>
+                        <div class="review-item" style="grid-column:1/-1;"><label>Schedule Discussed</label><p style="white-space:pre-line;">${esc(val('scheduleDiscussed'))}</p></div>
+                        <div class="review-item" style="grid-column:1/-1;"><label>Observation Availability</label><p style="white-space:pre-line;">${esc(val('observeLessonsAvailability'))}</p></div>
+                        <div class="review-item" style="grid-column:1/-1;"><label>Zoom Personal Room</label><p>${esc(val('zoomPersonalLink'))}</p></div>
+                        ${val('additionalClientNotes') ? `<div class="review-item" style="grid-column:1/-1;"><label>Additional Client Notes</label><p>${esc(val('additionalClientNotes'))}</p></div>` : ''}
+                    </div>
+                </div>
+            `;
+            document.getElementById('reviewContent').innerHTML = html;
+        }
+
+        // ============ SUBMIT ============
+        async function submitSurvey() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+            try {
+                const genderVal = val('gender');
+                const genderOtherVal = val('genderOther');
+                let finalGender = null;
+                if (genderVal === 'Other' && genderOtherVal) finalGender = genderOtherVal;
+                else if (genderVal && genderVal !== 'Other') finalGender = genderVal;
+                else if (genderVal === 'Other') finalGender = 'Other';
+
+                // 1. Insert teacher
+                const teacherData = {
+                    first_name: val('firstName'),
+                    last_name: val('lastName'),
+                    brand: val('brand'),
+                    state: val('state'),
+                    gender: finalGender,
+                    year_started_at_studio: val('yearStarted') ? parseInt(val('yearStarted')) : null,
+                    status: 'pending',
+                    formal_music_education: document.getElementById('formalEducation').checked,
+                    formal_education_details: val('educationDetails') || null,
+                    teaching_strength_1: val('strength1') || null,
+                    teaching_strength_2: val('strength2') || null,
+                    teaching_strength_3: val('strength3') || null,
+                    special_needs_willing: document.getElementById('specialNeeds').checked,
+                    learning_needs_comfort: parseInt(val('learningNeedsComfort')),
+                    additional_notes: val('additionalNotes') || null,
+                    // New onboarding fields
+                    birthday: val('birthday') || null,
+                    tshirt_size: tshirtSize || null,
+                    schedule_discussed: val('scheduleDiscussed') || null,
+                    available_start_date: val('availableStartDate') || null,
+                    hourly_pay_rate: val('hourlyPayRate') || null,
+                    observe_lessons_availability: val('observeLessonsAvailability') || null,
+                    open_to_subbing: subbingAnswer,
+                    logged_into_work_email: workEmailAnswer,
+                    background_check_completed: backgroundCheckAnswer,
+                    zoom_personal_link: val('zoomPersonalLink') || null,
+                    additional_client_notes: val('additionalClientNotes') || null,
+                    photo_url: null // Will update after upload
+                };
+
+                const teacherResult = await supabaseClient.from('teachers').insert([teacherData]).select();
+                if (teacherResult.error) throw teacherResult.error;
+                const teacherId = teacherResult.data[0].id;
+
+                // 2. Upload photo
+                if (selectedPhotoFile) {
+                    const ext = selectedPhotoFile.name.split('.').pop();
+                    const filePath = `${teacherId}.${ext}`;
+                    const uploadResult = await supabaseClient.storage
+                        .from('teacher-photos')
+                        .upload(filePath, selectedPhotoFile, { upsert: true });
+                    if (uploadResult.error) throw uploadResult.error;
+                    const { data: urlData } = supabaseClient.storage.from('teacher-photos').getPublicUrl(filePath);
+                    await supabaseClient.from('teachers').update({ photo_url: urlData.publicUrl }).eq('id', teacherId);
+                }
+
+                // 3. Insert cities
+                if (cities.length > 0) {
+                    const cityRows = cities.map((city, i) => ({ teacher_id: teacherId, city, order_index: i }));
+                    const citiesResult = await supabaseClient.from('teacher_cities').insert(cityRows);
+                    if (citiesResult.error) throw citiesResult.error;
+                }
+
+                // 4. Insert languages
+                if (languages.length > 0) {
+                    const langRows = languages.map((lang, i) => ({ teacher_id: teacherId, language: lang, order_index: i }));
+                    const langsResult = await supabaseClient.from('teacher_languages').insert(langRows);
+                    if (langsResult.error) throw langsResult.error;
+                }
+
+                // 5. Insert instruments
+                const instRows = instruments.map((inst, i) => {
+                    const instrumentName = inst.instrument === 'Other' ? (inst.instrument_other || 'Other') : inst.instrument;
+                    const ageVal = inst.youngest_age_preference === 'none' ? null : parseInt(inst.youngest_age_preference);
+                    return {
+                        teacher_id: teacherId,
+                        instrument: instrumentName,
+                        teacher_level: inst.teacher_level,
+                        youngest_age_preference: ageVal,
+                        year_started: parseInt(inst.year_started),
+                        genres: (inst.selectedGenres || []).join(', '),
+                        achievements_credentials: (inst.credentials || []).join(', '),
+                        notes: inst.notes,
+                        order_index: i
+                    };
+                });
+                const instsResult = await supabaseClient.from('teacher_instruments').insert(instRows);
+                if (instsResult.error) throw instsResult.error;
+
+                // Show success
+                document.querySelectorAll('.step-card').forEach(s => s.classList.remove('active'));
+                document.getElementById('successScreen').classList.add('active');
+                document.querySelectorAll('.progress-step').forEach(s => {
+                    s.classList.remove('active'); s.classList.add('completed');
+                    s.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>';
+                });
+                const fill = document.getElementById('progressBarFill');
+                const totalWidth = document.querySelector('.progress-steps').offsetWidth - 48;
+                fill.style.width = `${totalWidth}px`;
+
+            } catch (error) {
+                console.error('Submit error:', error);
+                showToast('Error submitting survey. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Submit Survey';
+            }
+        }
+
+        // ============ TOAST ============
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('.toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+    </script>
+</body>
+</html>
