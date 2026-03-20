@@ -1050,10 +1050,11 @@
 
         async function loadBrandsAndStates() {
             try {
-                const result = await supabaseClient.from('studios').select('brand, state, city').order('city');
+                const result = await supabaseClient.from('studios').select('brand, state, city').order('state');
                 if (result.error) throw result.error;
-                allStudios = (result.data || []).map(s => ({
-                    brand: s.brand || null,
+                console.log('Studios loaded:', result.data);
+                allStudios = (result.data || []).filter(s => s.state && s.brand).map(s => ({
+                    brand: s.brand,
                     state: s.state,
                     city: s.city
                 }));
