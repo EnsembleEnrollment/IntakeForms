@@ -1048,19 +1048,18 @@
         // ============ SUPABASE DATA ============
         let allStudios = [];
 
-        let allBrands = [];
-
         async function loadBrandsAndStates() {
             try {
-                const brandsResult = await supabaseClient.from('brands').select('id, name, state').order('name');
-                if (brandsResult.error) throw brandsResult.error;
-                allBrands = (brandsResult.data || []).filter(b => b.name && b.state);
+                const result = await supabaseClient
+                    .from('studios')
+                    .select('brand, state, city')
+                    .not('brand', 'is', null)
+                    .not('state', 'is', null)
+                    .order('state');
+                if (result.error) throw result.error;
+                allStudios = (result.data || []).filter(s => s.brand && s.brand.trim() !== '' && s.state && s.city);
 
-                const studiosResult = await supabaseClient.from('studios').select('brand_id, city').order('city');
-                if (studiosResult.error) throw studiosResult.error;
-                allStudios = (studiosResult.data || []).filter(s => s.brand_id && s.city);
-
-                const states = [...new Set(allBrands.map(b => b.state).filter(Boolean))].sort();
+                const states = [...new Set(allStudios.map(s => s.state).filter(Boolean))].sort();
                 const stateSelect = document.getElementById('state');
                 states.forEach(st => {
                     const opt = document.createElement('option');
@@ -1069,7 +1068,7 @@
                 });
                 document.getElementById('state').addEventListener('change', onStateChange);
             } catch (error) {
-                console.error('Error loading brands/studios:', error);
+                console.error('Error loading studios:', error);
             }
         }
 
@@ -1079,10 +1078,12 @@
             brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
             cities = []; renderCityCheckboxes();
             if (!state) return;
-            const brandsInState = allBrands.filter(b => b.state === state).sort((a, b) => a.name.localeCompare(b.name));
+            const brandsInState = [...new Set(
+                allStudios.filter(s => s.state === state).map(s => s.brand).filter(Boolean)
+            )].sort();
             brandsInState.forEach(b => {
                 const opt = document.createElement('option');
-                opt.value = b.name; opt.textContent = b.name;
+                opt.value = b; opt.textContent = b;
                 brandSelect.appendChild(opt);
             });
             brandSelect.onchange = onBrandChange;
@@ -1094,18 +1095,15 @@
 
         function renderCityCheckboxes() {
             const state = document.getElementById('state').value;
-            const brandName = document.getElementById('brand').value;
+            const brand = document.getElementById('brand').value;
             const grid = document.getElementById('citiesCheckboxGrid');
-            if (!state || !brandName) {
+            if (!state || !brand) {
                 grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">Select a state and brand first</p>';
                 return;
             }
-            const brand = allBrands.find(b => b.name === brandName && b.state === state);
-            if (!brand) {
-                grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">No cities found for this brand</p>';
-                return;
-            }
-            const citiesForBrand = [...new Set(allStudios.filter(s => s.brand_id === brand.id).map(s => s.city).filter(Boolean))].sort();
+            const citiesForBrand = [...new Set(
+                allStudios.filter(s => s.state === state && s.brand === brand).map(s => s.city).filter(Boolean)
+            )].sort();
             if (citiesForBrand.length === 0) {
                 grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">No cities found for this brand</p>';
                 return;
