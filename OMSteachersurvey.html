@@ -1046,20 +1046,22 @@
         }
 
         // ============ SUPABASE DATA ============
+        let allBrands = [];
         let allStudios = [];
 
         async function loadBrandsAndStates() {
             try {
-                const result = await supabaseClient
-                    .from('studios')
-                    .select('brand, state, city')
-                    .not('brand', 'is', null)
-                    .not('state', 'is', null)
-                    .order('state');
-                if (result.error) throw result.error;
-                allStudios = (result.data || []).filter(s => s.brand && s.brand.trim() !== '' && s.state && s.city);
+                const [brandsRes, studiosRes] = await Promise.all([
+                    supabaseClient.from('brands').select('id, name, state').order('name'),
+                    supabaseClient.from('studios').select('brand_id, city').order('city')
+                ]);
+                if (brandsRes.error) throw brandsRes.error;
+                if (studiosRes.error) throw studiosRes.error;
 
-                const states = [...new Set(allStudios.map(s => s.state).filter(Boolean))].sort();
+                allBrands = (brandsRes.data || []).filter(b => b.name && b.state);
+                allStudios = (studiosRes.data || []).filter(s => s.brand_id && s.city);
+
+                const states = [...new Set(allBrands.map(b => b.state).filter(Boolean))].sort();
                 const stateSelect = document.getElementById('state');
                 states.forEach(st => {
                     const opt = document.createElement('option');
@@ -1068,7 +1070,7 @@
                 });
                 document.getElementById('state').addEventListener('change', onStateChange);
             } catch (error) {
-                console.error('Error loading studios:', error);
+                console.error('Error loading brands/studios:', error);
             }
         }
 
@@ -1078,12 +1080,12 @@
             brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
             cities = []; renderCityCheckboxes();
             if (!state) return;
-            const brandsInState = [...new Set(
-                allStudios.filter(s => s.state === state).map(s => s.brand).filter(Boolean)
-            )].sort();
+            const brandsInState = allBrands
+                .filter(b => b.state === state)
+                .sort((a, b) => a.name.localeCompare(b.name));
             brandsInState.forEach(b => {
                 const opt = document.createElement('option');
-                opt.value = b; opt.textContent = b;
+                opt.value = b.id; opt.textContent = b.name;
                 brandSelect.appendChild(opt);
             });
             brandSelect.onchange = onBrandChange;
@@ -1095,14 +1097,14 @@
 
         function renderCityCheckboxes() {
             const state = document.getElementById('state').value;
-            const brand = document.getElementById('brand').value;
+            const brandId = document.getElementById('brand').value;
             const grid = document.getElementById('citiesCheckboxGrid');
-            if (!state || !brand) {
+            if (!state || !brandId) {
                 grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">Select a state and brand first</p>';
                 return;
             }
             const citiesForBrand = [...new Set(
-                allStudios.filter(s => s.state === state && s.brand === brand).map(s => s.city).filter(Boolean)
+                allStudios.filter(s => s.brand_id === brandId).map(s => s.city).filter(Boolean)
             )].sort();
             if (citiesForBrand.length === 0) {
                 grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">No cities found for this brand</p>';
@@ -1466,7 +1468,7 @@
                     <div class="review-section-title">Basic Information</div>
                     <div class="review-grid">
                         <div class="review-item"><label>Name</label><p>${esc(val('firstName'))} ${esc(val('lastName'))}</p></div>
-                        <div class="review-item"><label>Studio/Brand</label><p>${esc(val('brand'))}</p></div>
+                        <div class="review-item"><label>Studio/Brand</label><p>${esc(allBrands.find(b => b.id === val('brand'))?.name || val('brand'))}</p></div>
                         <div class="review-item"><label>State</label><p>${esc(val('state'))}</p></div>
                         <div class="review-item"><label>Gender</label><p>${esc(genderDisplay)}</p></div>
                         <div class="review-item"><label>Year Started</label><p>${val('yearStarted') || 'Not specified'}</p></div>
@@ -1567,7 +1569,8 @@
                 const teacherData = {
                     first_name: val('firstName'),
                     last_name: val('lastName'),
-                    brand: val('brand'),
+                    brand: allBrands.find(b => b.id === val('brand'))?.name || null,
+                    brand_id: val('brand') || null,
                     state: val('state'),
                     gender: finalGender,
                     year_started_at_studio: val('yearStarted') ? parseInt(val('yearStarted')) : null,
