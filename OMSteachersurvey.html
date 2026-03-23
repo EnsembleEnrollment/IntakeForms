@@ -1048,17 +1048,19 @@
         // ============ SUPABASE DATA ============
         let allStudios = [];
 
+        let allBrands = [];
+
         async function loadBrandsAndStates() {
             try {
-                const result = await supabaseClient.from('studios').select('brand, state, city').order('state');
-                if (result.error) throw result.error;
-                console.log('Studios loaded:', result.data);
-                allStudios = (result.data || []).filter(s => s.state && s.brand).map(s => ({
-                    brand: s.brand,
-                    state: s.state,
-                    city: s.city
-                }));
-                const states = [...new Set(allStudios.map(s => s.state).filter(Boolean))].sort();
+                const brandsResult = await supabaseClient.from('brands').select('id, name, state').order('name');
+                if (brandsResult.error) throw brandsResult.error;
+                allBrands = (brandsResult.data || []).filter(b => b.name && b.state);
+
+                const studiosResult = await supabaseClient.from('studios').select('brand_id, city').order('city');
+                if (studiosResult.error) throw studiosResult.error;
+                allStudios = (studiosResult.data || []).filter(s => s.brand_id && s.city);
+
+                const states = [...new Set(allBrands.map(b => b.state).filter(Boolean))].sort();
                 const stateSelect = document.getElementById('state');
                 states.forEach(st => {
                     const opt = document.createElement('option');
@@ -1067,7 +1069,7 @@
                 });
                 document.getElementById('state').addEventListener('change', onStateChange);
             } catch (error) {
-                console.error('Error loading brands:', error);
+                console.error('Error loading brands/studios:', error);
             }
         }
 
@@ -1077,10 +1079,10 @@
             brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
             cities = []; renderCityCheckboxes();
             if (!state) return;
-            const brandsInState = [...new Set(allStudios.filter(s => s.state === state).map(s => s.brand).filter(Boolean))].sort();
+            const brandsInState = allBrands.filter(b => b.state === state).sort((a, b) => a.name.localeCompare(b.name));
             brandsInState.forEach(b => {
                 const opt = document.createElement('option');
-                opt.value = b; opt.textContent = b;
+                opt.value = b.name; opt.textContent = b.name;
                 brandSelect.appendChild(opt);
             });
             brandSelect.onchange = onBrandChange;
@@ -1092,13 +1094,18 @@
 
         function renderCityCheckboxes() {
             const state = document.getElementById('state').value;
-            const brand = document.getElementById('brand').value;
+            const brandName = document.getElementById('brand').value;
             const grid = document.getElementById('citiesCheckboxGrid');
-            if (!state || !brand) {
+            if (!state || !brandName) {
                 grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">Select a state and brand first</p>';
                 return;
             }
-            const citiesForBrand = [...new Set(allStudios.filter(s => s.state === state && s.brand === brand).map(s => s.city).filter(Boolean))].sort();
+            const brand = allBrands.find(b => b.name === brandName && b.state === state);
+            if (!brand) {
+                grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">No cities found for this brand</p>';
+                return;
+            }
+            const citiesForBrand = [...new Set(allStudios.filter(s => s.brand_id === brand.id).map(s => s.city).filter(Boolean))].sort();
             if (citiesForBrand.length === 0) {
                 grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">No cities found for this brand</p>';
                 return;
