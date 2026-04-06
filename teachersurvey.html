@@ -312,6 +312,8 @@
         .photo-req-item i { color: var(--primary); flex-shrink: 0; margin-top: 2px; font-size: 0.75rem; }
         .photo-req-item.important i { color: var(--warning); }
         .photo-req-item.important { color: var(--text-primary); font-weight: 500; }
+        .photo-req-item.bonus i { color: var(--success); }
+        .photo-req-item.bonus { color: var(--success); font-weight: 600; }
         .photo-upload-actions { display: flex; align-items: center; gap: 0.75rem; }
         .photo-remove-btn {
             background: none; border: none; color: var(--danger);
@@ -332,6 +334,29 @@
         }
         .public-notice i { color: var(--primary); flex-shrink: 0; margin-top: 2px; font-size: 0.8rem; }
         .public-notice strong { color: var(--text-primary); }
+
+        /* ============ BIO TIPS ============ */
+        .bio-tips {
+            background: var(--gray-50);
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            padding: 0.875rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .bio-tips-title {
+            font-size: 0.8125rem; font-weight: 700; color: var(--text-primary);
+            margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.375rem;
+        }
+        .bio-tips-title i { color: var(--primary); }
+        .bio-tip-item {
+            display: flex; align-items: flex-start; gap: 0.375rem;
+            font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;
+            margin-bottom: 0.3rem;
+        }
+        .bio-tip-item i { color: var(--primary); flex-shrink: 0; margin-top: 2px; font-size: 0.7rem; }
+        .bio-tip-item.example { color: var(--text-light); font-style: italic; margin-left: 1.125rem; margin-bottom: 0.5rem; }
+        .bio-tip-item.ghost { color: var(--accent); font-weight: 600; }
+        .bio-tip-item.ghost i { color: var(--accent); }
 
         .selected-instruments-summary {
             margin-top: 1.5rem; padding: 1rem;
@@ -532,6 +557,10 @@
                                 <i class="fas fa-file-image"></i>
                                 JPG or PNG, max 5MB
                             </div>
+                            <div class="photo-req-item bonus">
+                                <i class="fas fa-star"></i>
+                                Bonus points if you're pictured with your instrument!
+                            </div>
                         </div>
                         <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handlePhotoSelect(this)">
                         <div class="photo-upload-actions">
@@ -597,7 +626,27 @@
             <!-- Bio -->
             <div class="form-group">
                 <label class="form-label">About You (Bio) <span class="required">*</span></label>
-                <textarea class="form-textarea" id="teacherBio" style="min-height:130px;" placeholder="Write a short paragraph about yourself — your musical background, teaching style, what you love about teaching, and what students can expect from lessons with you."></textarea>
+
+                <!-- Bio tips box -->
+                <div class="bio-tips">
+                    <div class="bio-tips-title"><i class="fas fa-pen-nib"></i> Tips for writing your bio</div>
+                    <div class="bio-tip-item">
+                        <i class="fas fa-circle"></i>
+                        Write in <strong>third person</strong> — refer to yourself by name, not "I"
+                    </div>
+                    <div class="bio-tip-item example">e.g., "John has been teaching piano since 2013 and specializes in..."</div>
+                    <div class="bio-tip-item">
+                        <i class="fas fa-circle"></i>
+                        Use <strong>actual years</strong> instead of "for X years"
+                    </div>
+                    <div class="bio-tip-item example">e.g., "Sarah began her teaching career in 2017..." not "Sarah has taught for 8 years..."</div>
+                    <div class="bio-tip-item ghost">
+                        <i class="fas fa-magic"></i>
+                        Prefer we write it for you? Just say so in the box below — we're happy to help!
+                    </div>
+                </div>
+
+                <textarea class="form-textarea" id="teacherBio" style="min-height:130px;" placeholder="e.g., Jane has been teaching violin since 2010 and brings a warm, encouraging style to every lesson... (or type &quot;Please write my bio for me&quot; and we'll take care of it!)"></textarea>
                 <div class="public-notice">
                     <i class="fas fa-info-circle"></i>
                     <span><strong>Heads up:</strong> The enrollment team will use your bio to help pair the right students with you.</span>
@@ -1293,7 +1342,6 @@
                 else if (genderVal && genderVal !== 'Other') finalGender = genderVal;
                 else if (genderVal === 'Other') finalGender = 'Other';
 
-                // 1. Insert teacher (without photo_url first)
                 const teacherData = {
                     first_name: val('firstName'),
                     last_name: val('lastName'),
@@ -1317,30 +1365,25 @@
                 if (teacherResult.error) throw teacherResult.error;
                 const teacherId = teacherResult.data[0].id;
 
-                // 2. Upload photo and update record
                 if (selectedPhotoFile) {
                     try {
                         const photoUrl = await uploadSurveyPhoto(teacherId);
                         if (photoUrl) await supabaseClient.from('teachers').update({ photo_url: photoUrl }).eq('id', teacherId);
                     } catch (photoErr) {
                         console.error('Photo upload failed:', photoErr);
-                        // Don't fail the whole survey for a photo error
                     }
                 }
 
-                // 3. Insert cities
                 if (cities.length > 0) {
                     const r = await supabaseClient.from('teacher_cities').insert(cities.map((city, i) => ({ teacher_id: teacherId, city, order_index: i })));
                     if (r.error) throw r.error;
                 }
 
-                // 4. Insert languages
                 if (languages.length > 0) {
                     const r = await supabaseClient.from('teacher_languages').insert(languages.map((language, i) => ({ teacher_id: teacherId, language, order_index: i })));
                     if (r.error) throw r.error;
                 }
 
-                // 5. Insert instruments
                 const instRows = instruments.map((inst, i) => ({
                     teacher_id: teacherId,
                     instrument: inst.instrument === 'Other' ? (inst.instrument_other || 'Other') : inst.instrument,
@@ -1355,7 +1398,6 @@
                 const r = await supabaseClient.from('teacher_instruments').insert(instRows);
                 if (r.error) throw r.error;
 
-                // Show success
                 document.querySelectorAll('.step-card').forEach(s => s.classList.remove('active'));
                 document.getElementById('successScreen').classList.add('active');
                 document.querySelectorAll('.progress-step').forEach(s => {
