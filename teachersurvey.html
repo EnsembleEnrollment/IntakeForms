@@ -134,6 +134,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .grow.head span:first-child{text-align:left;padding-left:14px}
 .grow .gn{font-size:14px;color:var(--muted);padding:9px 14px}
 .grow.set .gn{color:var(--strong);font-weight:700}
+.grow .gn .gx{border:none;background:none;color:var(--faint);cursor:pointer;padding:0 0 0 7px;line-height:1;
+  vertical-align:middle}
+.grow .gn .gx:hover{color:var(--red,#C0392B)}
+.grow .gn .gx svg{width:13px;height:13px}
 .gopt{display:flex;justify-content:center;padding:7px 4px}
 .gopt button{width:24px;height:24px;border-radius:50%;border:1.5px solid #D1D5DB;background:#fff;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;transition:all .12s}
@@ -562,6 +566,11 @@ button.hb:focus-visible{outline:2px solid var(--ac,#B9892F);outline-offset:2px}
         <div class="gtable i-gtable"></div>
         <div class="gpick i-gpick" hidden></div>
         <div class="cap i-gpickcap" hidden>0 of 2 chosen</div>
+        <div class="addrow i-gaddrow" style="margin-top:12px">
+          <input type="text" class="i-gother" maxlength="80" placeholder="Teach something not listed? Add it&hellip;">
+          <button type="button" class="btn soft i-gadd"><svg class="ic"><use href="#i-plus"/></svg> Add</button>
+        </div>
+        <div class="errmsg i-err-gother" hidden></div>
         <div class="errmsg i-err-genres" hidden>Please mark at least 2.</div>
       </div>
 
@@ -616,7 +625,7 @@ const LANGUAGES=['English','Spanish','Mandarin','Cantonese','Korean','Japanese',
   'American Sign Language'];
 
 /* limits — mirrored server-side by the save function */
-const MAX={inst:12,studios:8,langs:10,degrees:6,creds:4,strengths:3};
+const MAX={inst:12,studios:8,langs:10,degrees:6,creds:4,strengths:3,genres:16};
 
 /* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
@@ -836,6 +845,35 @@ function validateStep(n){
   return ok;
 }
 /* Keeps the pick-two chips, their cap line and the row data in agreement. */
+/* Adds one genre to an instrument card — both the grid row and the
+   pick-two chip — so a custom genre behaves exactly like a listed one.
+   Returns the row, or null if it was a duplicate or over the cap. */
+function addGenreRow(c,name,custom){
+  const g=(name||'').trim();
+  if(!g) return null;
+  const gt=c.querySelector('.i-gtable'), gp=c.querySelector('.i-gpick');
+  const existing=[...c.querySelectorAll('.grow[data-g]')]
+    .find(r=>r.dataset.g.toLowerCase()===g.toLowerCase());
+  if(existing) return existing;
+  if(c.querySelectorAll('.grow[data-g]').length>=MAX.genres) return null;
+  const row=document.createElement('div');
+  row.className='grow'; row.dataset.g=g;
+  if(custom) row.dataset.custom='1';
+  row.innerHTML='<div class="gn">'+esc(g)+
+    (custom?'<button type="button" class="gx" title="Remove">'+ic('x')+'</button>':'')+'</div>'+
+    GLEVELS.map(([k])=>'<div class="gopt"><button type="button" data-lvl="'+k+'">'+ic('check')+'</button></div>').join('');
+  gt.appendChild(row);
+  if(custom) row.querySelector('.gx').addEventListener('click',()=>{
+    const chip=gp.querySelector('.gchip[data-g="'+CSS.escape(g)+'"]');
+    if(chip) chip.remove();
+    row.remove(); syncPick(c); save();
+  });
+  const chip=document.createElement('button');
+  chip.type='button'; chip.className='gchip'; chip.dataset.g=g; chip.textContent=g;
+  gp.appendChild(chip);
+  return row;
+}
+
 function syncPick(c){
   const chosen=[...c.querySelectorAll('.grow[data-g][data-lvl]')].map(r=>r.dataset.g);
   c.querySelectorAll('.i-gpick .gchip').forEach(b=>
@@ -1209,6 +1247,27 @@ function addInst(data){
   });
   c.querySelector('.i-allg').addEventListener('change',e=>{ setAllGenres(c,e.target.checked); save(); });
 
+  /* add your own genre */
+  const gOther=c.querySelector('.i-gother'), gErr2=c.querySelector('.i-err-gother');
+  const addOwn=()=>{
+    const v=gOther.value.trim();
+    if(!v) return;
+    const dup=[...c.querySelectorAll('.grow[data-g]')]
+      .find(r=>r.dataset.g.toLowerCase()===v.toLowerCase());
+    if(dup){
+      gErr2.textContent='\u201C'+dup.dataset.g+'\u201D is already in the list.';
+      gErr2.hidden=false; gOther.value=''; dup.scrollIntoView({block:'center'}); return;
+    }
+    if(!addGenreRow(c,v,true)){
+      gErr2.textContent='That is as many genres as we can take for one instrument.';
+      gErr2.hidden=false; return;
+    }
+    gErr2.hidden=true; gOther.value=''; syncPick(c); save();
+  };
+  c.querySelector('.i-gadd').addEventListener('click',addOwn);
+  gOther.addEventListener('input',()=>{ gErr2.hidden=true; });
+  gOther.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addOwn(); } });
+
   /* credentials */
   const credSel=c.querySelector('.i-credsel'), credOther=c.querySelector('.i-credother');
   credSel.addEventListener('change',()=>{ credOther.hidden=credSel.value!=='Other'; if(!credOther.hidden) credOther.focus(); });
@@ -1258,7 +1317,10 @@ function fillInst(c,d){
      setAllGenres reads those rows, so calling it first would wipe them. */
   if(d.all_genres){ c.querySelector('.i-allg').checked=true; }
   Object.entries(d.genres||{}).forEach(([g,lvl])=>{
-    const row=c.querySelector(`.grow[data-g="${CSS.escape(g)}"]`); if(!row) return;
+    /* a custom genre has no row yet on a fresh page — rebuild it */
+    let row=c.querySelector(`.grow[data-g="${CSS.escape(g)}"]`);
+    if(!row) row=addGenreRow(c,g,true);
+    if(!row) return;
     const b=row.querySelector(`button[data-lvl="${lvl}"]`); if(b){ b.classList.add('on'); row.dataset.lvl=lvl; row.classList.add('set'); }
   });
   setAllGenres(c, c.querySelector('.i-allg').checked);
