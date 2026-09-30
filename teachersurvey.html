@@ -1,1426 +1,1583 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Information Survey - Enrollment Hub</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --primary: #FA8072;
-            --primary-light: #FFB4A2;
-            --primary-dark: #E96E5D;
-            --accent: #FFA07A;
-            --accent-light: #FFCBA4;
-            --bg: #F8F9FA;
-            --white: #FFFFFF;
-            --text-primary: #2D3748;
-            --text-secondary: #718096;
-            --text-light: #A0AEC0;
-            --gray-50: #F8F9FA;
-            --gray-100: #F1F3F5;
-            --gray-200: #E9ECEF;
-            --gray-300: #DEE2E6;
-            --success: #10B981;
-            --danger: #EF4444;
-            --warning: #F59E0B;
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
-            --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Information Survey — Enrollment Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* =========================================================
+   Teacher intake survey — public page.
+   Visual language matches the Enrollment Hub teacher editor so a director
+   recognises the answers when they review them.
+   ========================================================= */
+:root{
+  --bg:#F3F4F6; --card:#FFFFFF; --border:#E7E9ED; --line:#EEF0F3;
+  --text:#1F2937; --strong:#111827; --muted:#6B7280; --faint:#9CA3AF; --field:#F9FAFB;
+  --green:#16A34A; --green-soft:#E8F7EE; --red:#DC4C3E; --red-soft:#FDECEA;
+  --warn:#B7791F; --warn-soft:#FFF6E0; --warn-line:#F2D88F;
+  --shadow:0 1px 2px rgba(17,24,39,.04),0 4px 18px rgba(17,24,39,.05);
+  --ac:#C9961A; --ac-dk:#A87B0F; --ac-soft:#FBF4E2; --ac-line:#F1DFAE;
+  --ac-grad:linear-gradient(135deg,#F6D56A,#E3AE2C);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);
+  color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.page{max-width:780px;margin:0 auto;padding:24px 20px 120px}
+[hidden]{display:none!important}
+.ic{width:1em;height:1em;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.125em}
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+/* ---------- masthead ---------- */
+.mast{text-align:center;padding:14px 0 22px}
+.mast h1{font-size:26px;font-weight:800;color:var(--strong);letter-spacing:-.02em}
+.mast p{font-size:15px;color:var(--muted);margin-top:7px;max-width:52ch;margin-inline:auto}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg);
-            min-height: 100vh;
-            color: var(--text-primary);
-        }
+/* ---------- progress ---------- */
+.prog{position:sticky;top:0;z-index:30;background:var(--bg);padding:10px 0 14px}
+.pbar{height:6px;border-radius:999px;background:#E5E7EB;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--ac);border-radius:999px;transition:width .3s}
+.prow{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:13px;color:var(--muted)}
+.prow b{color:var(--strong);font-weight:700}
+.saved{color:var(--green);font-weight:600}
 
-        .survey-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            padding: 2rem 1.5rem;
-            text-align: center;
-            color: white;
-        }
-        .survey-header-logo {
-            width: 56px; height: 56px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 14px;
-            display: inline-flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;
-        }
-        .survey-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.375rem; }
-        .survey-header p { font-size: 1rem; opacity: 0.9; }
-        .refresh-warning {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.6);
-            border-radius: 10px; padding: 0.875rem 1.125rem;
-            display: flex; align-items: center; gap: 0.625rem;
-            font-size: 0.9rem; color: #fff;
-            max-width: 720px; margin: 1rem auto 0;
-            backdrop-filter: blur(4px);
-        }
-        .refresh-warning i { color: #fff; flex-shrink: 0; font-size: 1.2rem; }
+/* ---------- cards ---------- */
+.step{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:26px 26px 28px}
+.step h2{font-size:21px;font-weight:800;color:var(--strong);letter-spacing:-.01em}
+.step .lede{font-size:14.5px;color:var(--muted);margin-top:6px}
+.grp{padding-top:22px}
+.grp+.grp{border-top:1px solid var(--line);margin-top:24px}
+.gtitle{font-size:15px;font-weight:700;color:var(--strong);margin-bottom:4px}
+.gsub{font-size:13.5px;color:var(--muted);margin-bottom:14px}
 
-        .edu-toolbar { display: flex; gap: 0.25rem; margin-bottom: 0.375rem; }
-        .edu-toolbar-btn {
-            width: 34px; height: 34px; border: 1.5px solid var(--gray-200);
-            background: var(--white); color: var(--text-secondary); border-radius: 8px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 0.875rem; transition: all 0.2s;
-        }
-        .edu-toolbar-btn:hover { border-color: var(--primary); color: var(--primary); }
+/* ---------- fields ---------- */
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 16px}
+.two>.field:nth-last-child(-n+2),.three>.field:nth-last-child(-n+3){margin-bottom:0}
+label.q{display:block;font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:7px}
+.q .req{color:var(--red)}
+.q .opt{font-weight:500;color:var(--faint);text-transform:none;letter-spacing:0;font-size:12px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+input[type=text],input[type=email],select,textarea{width:100%;padding:11px 13px;border:1px solid var(--border);
+  border-radius:11px;font:inherit;font-size:15px;color:var(--text);background:#fff;
+  transition:border-color .14s,box-shadow .14s}
+input::placeholder,textarea::placeholder{color:#B4BAC4}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-soft)}
+textarea{min-height:110px;resize:vertical}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239CA3AF' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:36px}
+.err{border-color:var(--red)!important;box-shadow:0 0 0 3px var(--red-soft)!important}
+.errmsg{font-size:12.5px;color:var(--red);font-weight:600;margin-top:6px}
 
-        .survey-container {
-            max-width: 720px;
-            margin: -1.5rem auto 2rem;
-            padding: 0 1rem;
-        }
+/* ---------- pills / chips / tags ---------- */
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;font:inherit;
+  font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .13s}
+.seg button:hover{border-color:var(--ac-line);color:var(--text)}
+.seg button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.chip{border:1px solid var(--border);background:#fff;border-radius:10px;padding:10px 12px;display:flex;
+  align-items:center;gap:10px;font-size:14px;font-weight:600;cursor:pointer;user-select:none;color:var(--text)}
+.chip:hover{border-color:var(--ac-line)}
+.chip input{width:16px;height:16px;accent-color:var(--ac);flex-shrink:0}
+.chip.on{background:var(--ac-soft);border-color:var(--ac-line);color:var(--strong)}
+.chip.disabled{opacity:.42;pointer-events:none}
+.cap{font-size:12.5px;color:var(--faint);margin-top:8px}
+.taglist{display:flex;flex-wrap:wrap;gap:8px;min-height:40px;align-items:center;margin-bottom:10px}
+.taglist .empty{font-size:13.5px;color:var(--faint)}
+.tag{display:inline-flex;align-items:center;gap:8px;background:var(--ac-soft);border:1px solid var(--ac-line);
+  color:var(--ac-dk);border-radius:999px;padding:6px 8px 6px 13px;font-size:14px;font-weight:600}
+.tag button{border:none;background:none;color:var(--ac-dk);cursor:pointer;padding:2px;display:inline-flex;
+  border-radius:50%;opacity:.7;font-size:15px;line-height:1}
+.tag button:hover{opacity:1;color:var(--red)}
+.tag.prim{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn)}
+.tag .sub2{font-weight:500;color:var(--muted);font-size:12.5px}
+.addrow{display:flex;gap:10px}
+.addrow select,.addrow input{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:12px;
+  border:1px solid var(--border);background:#fff;font:inherit;font-size:14.5px;font-weight:700;color:var(--text);
+  cursor:pointer;transition:all .13s}
+.btn:hover{border-color:var(--ac-line);color:var(--strong)}
+.btn.soft{background:var(--ac-soft);border-color:var(--ac-line);color:var(--ac-dk)}
+.btn.primary{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.primary:hover{background:var(--ac-dk);border-color:var(--ac-dk);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.wide{width:100%;border:1.5px dashed var(--ac-line);background:var(--ac-soft);color:var(--ac-dk);padding:14px}
+.linkdanger{background:none;border:none;font:inherit;color:var(--red);font-size:13.5px;font-weight:700;cursor:pointer}
 
-        .progress-section {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 1.5rem;
-        }
-        .progress-steps {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-        }
-        .progress-steps::before {
-            content: '';
-            position: absolute;
-            top: 18px; left: 24px; right: 24px;
-            height: 3px;
-            background: var(--gray-200);
-            z-index: 0;
-        }
-        .progress-bar-fill {
-            position: absolute;
-            top: 18px; left: 24px;
-            height: 3px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            z-index: 1;
-            transition: width 0.4s ease;
-            border-radius: 2px;
-        }
-        .progress-step {
-            display: flex; flex-direction: column;
-            align-items: center; gap: 0.5rem;
-            z-index: 2; cursor: default;
-        }
-        .step-circle {
-            width: 36px; height: 36px; border-radius: 50%;
-            background: var(--white); border: 3px solid var(--gray-200);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.8125rem; font-weight: 700; color: var(--text-light);
-            transition: all 0.3s ease;
-        }
-        .progress-step.active .step-circle {
-            border-color: var(--primary); color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(250,128,114,0.15);
-        }
-        .progress-step.completed .step-circle {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-color: transparent; color: white;
-        }
-        .step-label {
-            font-size: 0.6875rem; font-weight: 600; color: var(--text-light);
-            text-transform: uppercase; letter-spacing: 0.03em;
-            text-align: center; max-width: 80px;
-        }
-        .progress-step.active .step-label { color: var(--primary); }
-        .progress-step.completed .step-label { color: var(--text-secondary); }
+/* ---------- photo ---------- */
+.photo{display:flex;gap:18px;align-items:center}
+.photo .ph{width:76px;height:76px;border-radius:50%;background:var(--ac-grad);flex-shrink:0;
+  background-size:cover;background-position:center}
+.photo .pt{font-size:14.5px;font-weight:700;color:var(--strong)}
+.photo .ps{font-size:13px;color:var(--muted);margin:1px 0 10px}
 
-        .step-card {
-            background: var(--white); border-radius: 16px;
-            padding: 2rem; box-shadow: var(--shadow-md); display: none;
-        }
-        .step-card.active { display: block; }
-        .step-title { font-size: 1.375rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
-        .step-subtitle { font-size: 0.9375rem; color: var(--text-secondary); margin-bottom: 1.75rem; }
+/* ---------- sub-cards (instruments, degrees) ---------- */
+.sub{border:1px solid var(--border);border-radius:15px;margin-top:16px;overflow:hidden;background:#fff}
+.sub-h{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--field);border-bottom:1px solid var(--line)}
+.sub-h .nm{font-size:16px;font-weight:800;color:var(--strong);flex:1}
+.sub-b{padding:18px 18px 20px}
+.sub-b .grp:first-child{padding-top:0}
 
-        .form-group { margin-bottom: 1.25rem; }
-        .form-label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.375rem; }
-        .form-label .required { color: var(--danger); margin-left: 2px; }
-        .form-hint { font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem; }
+/* ---------- genre table ---------- */
+.gtable{border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.grow{display:grid;grid-template-columns:1fr repeat(3,104px);align-items:center;border-top:1px solid var(--line)}
+.grow:first-child{border-top:none}
+.grow.head{background:var(--field)}
+.grow.head span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  text-align:center;padding:10px 4px}
+.grow.head span:first-child{text-align:left;padding-left:14px}
+.grow .gn{font-size:14px;color:var(--muted);padding:9px 14px}
+.grow.set .gn{color:var(--strong);font-weight:700}
+.gopt{display:flex;justify-content:center;padding:7px 4px}
+.gopt button{width:24px;height:24px;border-radius:50%;border:1.5px solid #D1D5DB;background:#fff;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;transition:all .12s}
+.gopt button:hover{border-color:var(--ac)}
+.gopt button.on{background:var(--ac);border-color:var(--ac)}
+.gopt button .ic{opacity:0}
+.gopt button.on .ic{opacity:1}
+@media(max-width:620px){.grow{grid-template-columns:1fr repeat(3,56px)}.grow.head span{font-size:9.5px}}
 
-        .form-input, .form-select, .form-textarea {
-            width: 100%; padding: 0.75rem 1rem;
-            background: var(--gray-50); border: 1.5px solid var(--gray-200);
-            border-radius: 10px; font-size: 0.9375rem; color: var(--text-primary);
-            font-family: inherit; transition: all 0.2s;
-        }
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none; border-color: var(--primary); background: var(--white);
-            box-shadow: 0 0 0 3px rgba(250,128,114,0.1);
-        }
-        .form-textarea { resize: vertical; min-height: 100px; }
-        .form-input.error, .form-select.error, .form-textarea.error { border-color: var(--danger); }
-        .form-error { color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem; display: none; }
-        .form-error.visible { display: block; }
-        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+/* ---------- needs ---------- */
+.needs{border:1px solid var(--line);border-radius:14px;padding:18px}
+.needs+.needs{margin-top:14px}
+.needs h4{font-size:15px;font-weight:700;color:var(--strong)}
+.needs .nd{font-size:13px;color:var(--muted);margin-bottom:14px}
+.sliderbox{border:1px solid var(--line);border-radius:14px;background:var(--field);padding:16px 18px;margin-top:14px}
+.sliderbox .sq{font-size:14px;font-weight:700;color:var(--strong);display:flex;justify-content:space-between;align-items:center}
+.sliderbox .sq b{color:#fff;background:var(--ac);border-radius:999px;padding:1px 10px;font-size:13px}
+.sliderbox input[type=range]{width:100%;accent-color:var(--ac);margin-top:10px}
+.ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:600;margin-top:4px}
 
-        .toggle-group {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 1rem; background: var(--gray-50); border-radius: 10px; margin-bottom: 1rem;
-        }
-        .toggle-label-text { font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); }
-        .toggle-switch { position: relative; width: 50px; height: 26px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--gray-300); transition: 0.3s; border-radius: 26px;
-        }
-        .toggle-slider:before {
-            position: absolute; content: ""; height: 20px; width: 20px;
-            left: 3px; bottom: 3px; background: white; transition: 0.3s; border-radius: 50%;
-        }
-        .toggle-switch input:checked + .toggle-slider { background: linear-gradient(135deg, var(--primary), var(--accent)); }
-        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
+/* ---------- review ---------- */
+.rev{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}
+.rev .rh{background:var(--field);padding:10px 16px;font-size:12px;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);display:flex;align-items:center}
+.rev .rh button{margin-left:auto;background:none;border:none;font:inherit;font-size:13px;font-weight:700;
+  color:var(--ac-dk);cursor:pointer;text-transform:none;letter-spacing:0}
+.rev .rr{display:grid;grid-template-columns:190px 1fr;gap:12px;padding:9px 16px;border-top:1px solid var(--line);font-size:14px}
+.rev .rr .k{color:var(--muted)}
+.rev .rr .v{color:var(--strong);font-weight:600;word-break:break-word}
+.rev .rr .v.none{color:var(--faint);font-weight:400}
+@media(max-width:620px){.rev .rr{grid-template-columns:1fr;gap:2px}}
 
-        .btn {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.75rem 1.5rem; border-radius: 10px;
-            font-size: 0.9375rem; font-weight: 600; cursor: pointer;
-            border: none; transition: all 0.2s;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: white; box-shadow: 0 4px 12px rgba(250,128,114,0.3);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(250,128,114,0.4); }
-        .btn-secondary { background: var(--white); color: var(--text-primary); border: 1.5px solid var(--gray-200); }
-        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #34D399);
-            color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3);
-        }
-        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,0.4); }
-        .btn-small { padding: 0.5rem 1rem; font-size: 0.8125rem; }
-        .step-nav { display: flex; justify-content: space-between; margin-top: 2rem; }
+/* ---------- nav ---------- */
+.nav{display:flex;gap:12px;align-items:center;margin-top:22px}
+.nav .sp{flex:1}
+.note{background:var(--warn-soft);border:1px solid var(--warn-line);border-left:3px solid var(--warn);
+  border-radius:12px;padding:12px 15px;font-size:13.5px;color:#6B4E0E;margin-top:16px}
 
-        .tags-container {
-            display: flex; flex-wrap: wrap; gap: 0.5rem;
-            padding: 1rem; background: var(--gray-50); border-radius: 10px;
-            min-height: 50px; border: 1.5px solid var(--gray-200);
-        }
-        .tags-container.error { border-color: var(--danger); }
-        .tag {
-            display: inline-flex; align-items: center; gap: 0.375rem;
-            padding: 0.375rem 0.75rem;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: white; border-radius: 20px; font-size: 0.8125rem; font-weight: 500;
-        }
-        .tag button {
-            background: rgba(255,255,255,0.3); border: none; color: white;
-            width: 18px; height: 18px; border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.75rem; transition: all 0.2s;
-        }
-        .tag button:hover { background: rgba(255,255,255,0.5); }
-        .tags-placeholder { color: var(--text-light); font-size: 0.875rem; }
+/* ---------- done ---------- */
+.done{text-align:center;padding:40px 20px}
+.done .tick{width:72px;height:72px;border-radius:50%;background:var(--green-soft);color:var(--green);
+  display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px}
+.done h2{font-size:24px;font-weight:800;color:var(--strong)}
+.done p{font-size:15px;color:var(--muted);margin-top:10px;max-width:46ch;margin-inline:auto}
 
-        .checkbox-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.625rem;
-        }
-        .checkbox-grid.instruments-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-        .checkbox-item {
-            display: flex; align-items: center; gap: 0.625rem;
-            padding: 0.75rem 1rem; background: var(--gray-50);
-            border: 1.5px solid var(--gray-200); border-radius: 10px;
-            cursor: pointer; transition: all 0.2s; user-select: none;
-        }
-        .checkbox-item:hover { border-color: var(--primary-light); background: rgba(250,128,114,0.03); }
-        .checkbox-item.selected { border-color: var(--primary); background: rgba(250,128,114,0.08); }
-        .checkbox-item .check-icon {
-            width: 20px; height: 20px; border: 2px solid var(--gray-300); border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.75rem; color: transparent; transition: all 0.2s; flex-shrink: 0;
-        }
-        .checkbox-item.selected .check-icon {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-color: transparent; color: white;
-        }
-        .checkbox-item .check-label { font-size: 0.875rem; font-weight: 500; color: var(--text-primary); }
+@media(max-width:620px){
+  .page{padding:16px 14px 100px}
+  .step{padding:20px 18px 22px;border-radius:14px}
+  .two,.three{grid-template-columns:1fr}
+  .two>.field,.three>.field{margin-bottom:18px!important}
+  .two>.field:last-child,.three>.field:last-child{margin-bottom:0!important}
+}
 
-        .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
-        .genre-grid.error { outline: 2px solid var(--danger); outline-offset: 4px; border-radius: 8px; }
-        .genre-checkbox {
-            display: flex; align-items: center; gap: 0.5rem;
-            padding: 0.625rem 0.875rem; background: var(--gray-50);
-            border: 1.5px solid var(--gray-200); border-radius: 8px;
-            cursor: pointer; transition: all 0.2s; user-select: none;
-        }
-        .genre-checkbox:hover { border-color: var(--primary-light); }
-        .genre-checkbox.selected { border-color: var(--primary); background: rgba(250,128,114,0.08); }
-        .genre-check-icon {
-            width: 18px; height: 18px; border: 2px solid var(--gray-300); border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.625rem; color: transparent; transition: all 0.2s; flex-shrink: 0;
-        }
-        .genre-checkbox.selected .genre-check-icon {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-color: transparent; color: white;
-        }
-        .genre-label { font-size: 0.8125rem; font-weight: 500; color: var(--text-primary); }
+/* ---- help bubbles -------------------------------------------------- */
+.hw{position:relative;display:inline-flex;vertical-align:middle;margin-left:6px}
+button.hb{width:16px;height:16px;border-radius:50%;border:1px solid var(--border);
+  background:var(--field);color:var(--muted);font:600 11px/1 ui-sans-serif,system-ui,sans-serif;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+  transition:background .12s,color .12s,border-color .12s}
+button.hb:hover,button.hb[aria-expanded="true"]{background:var(--ac,#B9892F);border-color:var(--ac,#B9892F);color:#fff}
+button.hb:focus-visible{outline:2px solid var(--ac,#B9892F);outline-offset:2px}
+.hp{position:absolute;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(100% + 9px);
+  width:max-content;max-width:270px;background:var(--strong);color:#fff;border-radius:9px;
+  padding:9px 11px;font:400 12.5px/1.5 ui-sans-serif,system-ui,sans-serif;
+  box-shadow:0 8px 24px rgba(17,24,39,.22);opacity:0;visibility:hidden;
+  transition:opacity .12s,visibility .12s;pointer-events:none;text-align:left;font-weight:400}
+.hp::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:var(--strong)}
+.hw.on .hp{opacity:1;visibility:visible}
+.hp.flipL{left:auto;right:-8px;transform:none}
+.hp.flipL::after{left:auto;right:14px;transform:none}
+.hp.flipR{left:-8px;transform:none}
+.hp.flipR::after{left:14px;transform:none}
+@media (max-width:560px){ .hp{max-width:220px} }
 
-        .cred-tags-container {
-            display: flex; flex-wrap: wrap; gap: 0.5rem;
-            padding: 0.75rem; background: var(--gray-50); border-radius: 10px;
-            min-height: 44px; border: 1.5px solid var(--gray-200);
-        }
-        .cred-tags-container.error { border-color: var(--danger); }
-        .cred-add-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-        .cred-add-row input {
-            flex: 1; padding: 0.625rem 0.875rem;
-            border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 0.875rem;
-        }
-        .cred-add-row input:focus { outline: none; border-color: var(--primary); }
 
-        /* ============ PHOTO UPLOAD ============ */
-        .photo-upload-area {
-            display: flex; align-items: center; gap: 1.5rem;
-            padding: 1.25rem; background: var(--gray-50);
-            border: 1.5px solid var(--gray-200); border-radius: 12px;
-            margin-bottom: 0.25rem; transition: border-color 0.2s;
-        }
-        .photo-upload-area.error { border-color: var(--danger); }
-        .photo-upload-preview {
-            width: 88px; height: 88px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2.25rem; color: white; flex-shrink: 0;
-            overflow: hidden; border: 3px solid var(--gray-200); transition: border-color 0.2s;
-        }
-        .photo-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
-        .photo-upload-info { flex: 1; }
-        .photo-upload-info strong { font-size: 0.9375rem; color: var(--text-primary); display: block; margin-bottom: 0.5rem; }
-        .photo-requirements { margin-bottom: 0.75rem; }
-        .photo-req-item {
-            display: flex; align-items: flex-start; gap: 0.375rem;
-            font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4;
-            margin-bottom: 0.3rem;
-        }
-        .photo-req-item i { color: var(--primary); flex-shrink: 0; margin-top: 2px; font-size: 0.75rem; }
-        .photo-req-item.important i { color: var(--warning); }
-        .photo-req-item.important { color: var(--text-primary); font-weight: 500; }
-        .photo-req-item.bonus i { color: var(--success); }
-        .photo-req-item.bonus { color: var(--success); font-weight: 600; }
-        .photo-upload-actions { display: flex; align-items: center; gap: 0.75rem; }
-        .photo-remove-btn {
-            background: none; border: none; color: var(--danger);
-            font-size: 0.8125rem; font-weight: 600; cursor: pointer;
-            padding: 0; display: none; transition: opacity 0.2s;
-        }
-        .photo-remove-btn:hover { opacity: 0.7; }
+/* ---- pick-two genre chips ------------------------------------------ */
+.gpick{display:flex;flex-wrap:wrap;gap:8px}
+.gpick .gchip{border:1px solid var(--border);background:#fff;border-radius:999px;
+  padding:9px 15px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;
+  transition:background .12s,border-color .12s,color .12s}
+.gpick .gchip:hover{border-color:var(--ac-line)}
+.gpick .gchip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.gpick.full .gchip:not(.on){opacity:.45;cursor:not-allowed}
 
-        /* ============ PUBLIC NOTICE ============ */
-        .public-notice {
-            display: flex; align-items: flex-start; gap: 0.5rem;
-            padding: 0.625rem 0.875rem;
-            background: rgba(250,128,114,0.07);
-            border: 1px solid rgba(250,128,114,0.25);
-            border-radius: 8px;
-            font-size: 0.8125rem; color: var(--text-secondary);
-            line-height: 1.5; margin-top: 0.5rem;
-        }
-        .public-notice i { color: var(--primary); flex-shrink: 0; margin-top: 2px; font-size: 0.8rem; }
-        .public-notice strong { color: var(--text-primary); }
-
-        /* ============ BIO TIPS ============ */
-        .bio-tips {
-            background: var(--gray-50);
-            border: 1.5px solid var(--gray-200);
-            border-radius: 10px;
-            padding: 0.875rem 1rem;
-            margin-bottom: 0.5rem;
-        }
-        .bio-tips-title {
-            font-size: 0.8125rem; font-weight: 700; color: var(--text-primary);
-            margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.375rem;
-        }
-        .bio-tips-title i { color: var(--primary); }
-        .bio-tip-item {
-            display: flex; align-items: flex-start; gap: 0.375rem;
-            font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;
-            margin-bottom: 0.3rem;
-        }
-        .bio-tip-item i { color: var(--primary); flex-shrink: 0; margin-top: 2px; font-size: 0.7rem; }
-        .bio-tip-item.example { color: var(--text-light); font-style: italic; margin-left: 1.125rem; margin-bottom: 0.5rem; }
-        .bio-tip-item.ghost { color: var(--accent); font-weight: 600; }
-        .bio-tip-item.ghost i { color: var(--accent); }
-
-        .selected-instruments-summary {
-            margin-top: 1.5rem; padding: 1rem;
-            background: rgba(250,128,114,0.08); border-radius: 10px;
-            border: 1.5px solid var(--primary-light);
-        }
-        .selected-instruments-summary h4 { font-size: 0.875rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 0.5rem; }
-        .selected-instruments-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .selected-instrument-tag {
-            padding: 0.375rem 0.75rem;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: white; border-radius: 20px; font-size: 0.8125rem; font-weight: 500;
-        }
-
-        .instrument-progress {
-            display: flex; align-items: center; justify-content: center;
-            gap: 0.5rem; margin-bottom: 1.5rem; padding: 1rem;
-            background: var(--gray-50); border-radius: 10px;
-        }
-        .instrument-progress-text { font-size: 0.875rem; color: var(--text-secondary); }
-        .instrument-progress-text strong { color: var(--primary); }
-        .instrument-progress-dots { display: flex; gap: 0.375rem; }
-        .progress-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gray-200); transition: all 0.2s; }
-        .progress-dot.active { background: linear-gradient(135deg, var(--primary), var(--accent)); box-shadow: 0 0 0 3px rgba(250,128,114,0.2); }
-        .progress-dot.completed { background: var(--success); }
-
-        .current-instrument-header {
-            display: flex; align-items: center; gap: 0.75rem;
-            padding: 1rem 1.25rem;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-radius: 12px; margin-bottom: 1.5rem; color: white;
-        }
-        .current-instrument-icon {
-            width: 40px; height: 40px; background: rgba(255,255,255,0.2);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
-        }
-        .current-instrument-name { font-size: 1.25rem; font-weight: 700; }
-
-        .age-note {
-            display: flex; align-items: flex-start; gap: 0.625rem;
-            padding: 0.875rem 1rem; background: rgba(250,128,114,0.08);
-            border-radius: 10px; margin-bottom: 1rem; font-size: 0.8125rem;
-            color: var(--text-secondary); line-height: 1.5;
-        }
-        .age-note i { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
-
-        .comfort-slider-section { background: var(--gray-50); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-        .comfort-slider-label { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; }
-        .comfort-slider-description { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.25rem; }
-        .comfort-slider-wrapper { display: flex; align-items: center; gap: 1rem; }
-        .comfort-slider {
-            flex: 1; -webkit-appearance: none; appearance: none;
-            height: 8px; border-radius: 4px; outline: none;
-            background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--slider-progress, 50%), var(--gray-200) var(--slider-progress, 50%), var(--gray-200) 100%);
-        }
-        .comfort-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none;
-            width: 24px; height: 24px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            cursor: pointer; box-shadow: 0 2px 8px rgba(250,128,114,0.4); transition: transform 0.2s;
-        }
-        .comfort-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
-        .comfort-slider::-moz-range-thumb {
-            width: 24px; height: 24px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            cursor: pointer; border: none;
-        }
-        .comfort-slider-value {
-            min-width: 48px; height: 48px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: white; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.25rem; font-weight: 700;
-        }
-        .comfort-slider-labels { display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.6875rem; color: var(--text-light); }
-        .comfort-slider-note {
-            margin-top: 1rem; padding: 0.75rem 1rem;
-            background: rgba(16,185,129,0.08); border-radius: 8px;
-            font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;
-        }
-
-        .review-section { margin-bottom: 1.5rem; }
-        .review-section-title {
-            font-size: 0.8125rem; font-weight: 700; color: var(--primary);
-            text-transform: uppercase; letter-spacing: 0.05em;
-            margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--gray-100);
-        }
-        .review-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-        .review-item label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-light); margin-bottom: 0.125rem; }
-        .review-item p { font-size: 0.9375rem; color: var(--text-primary); }
-        .review-tags { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.25rem; }
-        .review-tag { padding: 0.25rem 0.625rem; background: var(--gray-100); border-radius: 12px; font-size: 0.75rem; color: var(--text-primary); font-weight: 500; }
-        .review-instrument-card { background: var(--gray-50); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
-        .review-instrument-name { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; }
-        .review-photo-row {
-            display: flex; align-items: center; gap: 1rem;
-            padding: 0.75rem; background: rgba(16,185,129,0.06);
-            border-radius: 10px; border: 1px solid rgba(16,185,129,0.2);
-            margin-bottom: 1rem;
-        }
-        .review-photo-circle {
-            width: 60px; height: 60px; border-radius: 50%;
-            overflow: hidden; border: 2px solid rgba(16,185,129,0.3);
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 1.25rem; font-weight: 700; flex-shrink: 0;
-        }
-        .review-photo-circle img { width: 100%; height: 100%; object-fit: cover; }
-        .review-photo-info label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-light); margin-bottom: 0.125rem; }
-        .review-photo-info p { color: var(--success); font-weight: 600; font-size: 0.875rem; }
-
-        .success-screen { text-align: center; padding: 3rem 2rem; }
-        .success-icon {
-            width: 80px; height: 80px;
-            background: linear-gradient(135deg, var(--success), #34D399);
-            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-            font-size: 2rem; color: white; margin-bottom: 1.5rem;
-        }
-        .success-screen h2 { font-size: 1.75rem; color: var(--text-primary); margin-bottom: 0.75rem; }
-        .success-screen p { color: var(--text-secondary); font-size: 1rem; line-height: 1.6; }
-
-        .toast {
-            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: white; border-radius: 12px; padding: 1rem 1.5rem;
-            box-shadow: var(--shadow-xl); display: flex; align-items: center; gap: 0.75rem;
-            z-index: 3000; opacity: 0; transition: all 0.3s ease;
-            border-left: 4px solid var(--danger);
-        }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast-icon { color: var(--danger); font-size: 1.25rem; }
-        .toast-message { font-size: 0.9375rem; color: var(--text-primary); font-weight: 500; }
-
-        @media (max-width: 768px) {
-            .survey-header { padding: 1.5rem 1rem; }
-            .survey-header h1 { font-size: 1.375rem; }
-            .survey-container { padding: 0 0.75rem; }
-            .step-card { padding: 1.25rem; }
-            .form-row { grid-template-columns: 1fr; }
-            .step-label { display: none; }
-            .progress-steps::before { left: 18px; right: 18px; }
-            .progress-bar-fill { left: 18px; }
-            .review-grid { grid-template-columns: 1fr; }
-            .photo-upload-area { flex-direction: column; text-align: center; }
-            .photo-upload-actions { justify-content: center; }
-        }
-    </style>
+</style>
 </head>
 <body>
-    <div class="survey-header">
-        <div class="survey-header-logo">EH</div>
-        <h1>Teacher Information Survey</h1>
-        <p>Please complete all sections so we can build your teacher profile</p>
-        <div class="refresh-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span><strong>⚠️ Don't lose your work!</strong> This survey cannot be saved as a draft. If you refresh, close, or navigate away, you'll need to start over.</span>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+  <symbol id="i-fwd" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+</svg>
+
+<div class="page">
+
+  <div class="mast">
+    <h1>Teacher Information Survey</h1>
+    <p>This builds your profile in our enrollment system, so the team can match you with
+       the right students. It takes about ten minutes. Your answers save as you go.</p>
+  </div>
+
+  <div class="prog" id="progWrap">
+    <div class="pbar"><i id="pFill" style="width:0"></i></div>
+    <div class="prow">
+      <span>Step <b id="pNum">1</b> of <b id="pTot">6</b> &middot; <span id="pName">Basics</span></span>
+      <span class="saved" id="savedNote" hidden>Saved</span>
+    </div>
+  </div>
+
+  <form id="form" autocomplete="on">
+
+  <!-- ================= STEP 1 — BASICS ================= -->
+  <section class="step" data-step="1" data-name="Basics">
+    <h2>About you</h2>
+    <p class="lede">The basics, so we know who you are and where you teach.</p>
+
+    <div class="grp">
+      <div class="photo">
+        <div class="ph" id="photoPh"></div>
+        <div>
+          <div class="pt">Profile photo <span class="q opt" style="display:inline">(optional)</span></div>
+          <div class="ps">JPG or PNG, up to 5MB</div>
+          <button type="button" class="btn" id="photoBtn">Choose a photo</button>
+          <button type="button" class="linkdanger" id="photoClear" hidden>Remove</button>
+          <input type="file" id="photoInput" accept="image/png,image/jpeg" hidden>
         </div>
+      </div>
     </div>
 
-    <div class="survey-container">
-        <div class="progress-section">
-            <div class="progress-steps">
-                <div class="progress-bar-fill" id="progressBarFill"></div>
-                <div class="progress-step active" data-step="1"><div class="step-circle">1</div><span class="step-label">Basic Info</span></div>
-                <div class="progress-step" data-step="2"><div class="step-circle">2</div><span class="step-label">Education</span></div>
-                <div class="progress-step" data-step="3"><div class="step-circle">3</div><span class="step-label">Preferences</span></div>
-                <div class="progress-step" data-step="4"><div class="step-circle">4</div><span class="step-label">Locations</span></div>
-                <div class="progress-step" data-step="5"><div class="step-circle">5</div><span class="step-label">Student Needs</span></div>
-                <div class="progress-step" data-step="6"><div class="step-circle">6</div><span class="step-label">Instruments</span></div>
-                <div class="progress-step" data-step="7"><div class="step-circle">7</div><span class="step-label">Details</span></div>
-                <div class="progress-step" data-step="8"><div class="step-circle">8</div><span class="step-label">Review</span></div>
-            </div>
+    <div class="grp">
+      <div class="two">
+        <div class="field"><label class="q" data-help="fFirst">First name <span class="req">*</span></label>
+          <input type="text" id="fFirst" autocomplete="given-name"></div>
+        <div class="field"><label class="q" data-help="fLast">Last name <span class="req">*</span></label>
+          <input type="text" id="fLast" autocomplete="family-name"></div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label class="q" data-help="fGender">Gender <span class="req">*</span></label>
+          <select id="fGender"><option value="">Select&hellip;</option><option>Female</option><option>Male</option><option value="Other">Other</option></select>
+          <div class="errmsg" id="errGender" hidden>Please choose one.</div>
+          <div id="pronWrap" hidden style="margin-top:10px">
+            <label class="q" data-help="fPron">How would you like to be described? <span class="req">*</span></label>
+            <input type="text" id="fPron" placeholder="e.g., Non-binary, they/them">
+            <div class="errmsg" id="errPron" hidden>Please tell us how to describe you.</div>
+          </div>
         </div>
-
-        <!-- Step 1: Basic Info -->
-        <div class="step-card active" id="step1">
-            <h2 class="step-title">Basic Information</h2>
-            <p class="step-subtitle">Let's start with your photo, bio, and studio details</p>
-
-            <!-- Photo Upload -->
-            <div class="form-group">
-                <label class="form-label">Profile Photo <span class="required">*</span></label>
-                <div class="photo-upload-area" id="photoUploadArea">
-                    <div class="photo-upload-preview" id="photoPreview">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="photo-upload-info">
-                        <strong>Upload your profile photo</strong>
-                        <div class="photo-requirements">
-                            <div class="photo-req-item important">
-                                <i class="fas fa-triangle-exclamation"></i>
-                                Must clearly show your face and be professional
-                            </div>
-                            <div class="photo-req-item">
-                                <i class="fas fa-times-circle"></i>
-                                No sunglasses, filters, group photos, or heavy crops
-                            </div>
-                            <div class="photo-req-item">
-                                <i class="fas fa-file-image"></i>
-                                JPG or PNG, max 5MB
-                            </div>
-                            <div class="photo-req-item bonus">
-                                <i class="fas fa-star"></i>
-                                Bonus points if you're pictured with your instrument!
-                            </div>
-                        </div>
-                        <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handlePhotoSelect(this)">
-                        <div class="photo-upload-actions">
-                            <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('photoFileInput').click()">
-                                <i class="fas fa-upload"></i> Choose Photo
-                            </button>
-                            <button type="button" class="photo-remove-btn" id="photoRemoveBtn" onclick="removePhoto()">
-                                <i class="fas fa-times"></i> Remove
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-error" id="photoError">Please upload a profile photo</div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">First Name <span class="required">*</span></label>
-                    <input type="text" class="form-input" id="firstName" required>
-                    <div class="form-error" id="firstNameError">First name is required</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Last Name <span class="required">*</span></label>
-                    <input type="text" class="form-input" id="lastName" required>
-                    <div class="form-error" id="lastNameError">Last name is required</div>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">State <span class="required">*</span></label>
-                    <select class="form-select" id="state"><option value="">Select state...</option></select>
-                    <div class="form-error" id="stateError">State is required</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Studio / Brand <span class="required">*</span></label>
-                    <select class="form-select" id="brand"><option value="">Select studio/brand...</option></select>
-                    <div class="form-hint">Select a state first to filter brands</div>
-                    <div class="form-error" id="brandError">Studio/Brand is required</div>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Gender</label>
-                    <select class="form-select" id="gender" onchange="toggleGenderOther()">
-                        <option value="">Select gender...</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Year Started at Studio</label>
-                    <input type="number" class="form-input" id="yearStarted" placeholder="e.g., 2020" min="1950" max="2026">
-                </div>
-            </div>
-            <div class="form-group" id="genderOtherGroup" style="display:none;">
-                <label class="form-label">Please Specify</label>
-                <input type="text" class="form-input" id="genderOther" placeholder="Please specify your gender">
-            </div>
-
-            <!-- Bio -->
-            <div class="form-group">
-                <label class="form-label">About You (Bio) <span class="required">*</span></label>
-
-                <!-- Bio tips box -->
-                <div class="bio-tips">
-                    <div class="bio-tips-title"><i class="fas fa-pen-nib"></i> Tips for writing your bio</div>
-                    <div class="bio-tip-item">
-                        <i class="fas fa-circle"></i>
-                        Write in <strong>third person</strong> — refer to yourself by name, not "I"
-                    </div>
-                    <div class="bio-tip-item example">e.g., "John has been teaching piano since 2013 and specializes in..."</div>
-                    <div class="bio-tip-item">
-                        <i class="fas fa-circle"></i>
-                        Use <strong>actual years</strong> instead of "for X years"
-                    </div>
-                    <div class="bio-tip-item example">e.g., "Sarah began her teaching career in 2017..." not "Sarah has taught for 8 years..."</div>
-                    <div class="bio-tip-item ghost">
-                        <i class="fas fa-magic"></i>
-                        Prefer we write it for you? Just say so in the box below — we're happy to help!
-                    </div>
-                </div>
-
-                <textarea class="form-textarea" id="teacherBio" style="min-height:130px;" placeholder="e.g., Jane has been teaching violin since 2010 and brings a warm, encouraging style to every lesson... (or type &quot;Please write my bio for me&quot; and we'll take care of it!)"></textarea>
-                <div class="public-notice">
-                    <i class="fas fa-info-circle"></i>
-                    <span><strong>Heads up:</strong> The enrollment team will use your bio to help pair the right students with you.</span>
-                </div>
-                <div class="form-error" id="bioError">A short bio is required</div>
-            </div>
-
-            <div class="step-nav">
-                <div></div>
-                <button class="btn btn-primary" onclick="nextStep(1)">Next <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Step 2: Education -->
-        <div class="step-card" id="step2">
-            <h2 class="step-title">Education & Strengths</h2>
-            <p class="step-subtitle">Tell us about your musical background</p>
-            <div class="toggle-group">
-                <span class="toggle-label-text">Do you have formal music education?</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="formalEducation" onchange="toggleEducationDetails()">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div id="educationDetailsSection" style="display:none;">
-                <div class="form-group">
-                    <label class="form-label">Education Details <span class="required">*</span></label>
-                    <div class="edu-toolbar">
-                        <button type="button" class="edu-toolbar-btn" onclick="insertBullet()" title="Add bullet point"><i class="fas fa-list-ul"></i></button>
-                    </div>
-                    <textarea class="form-textarea" id="educationDetails" placeholder="• Bachelor of Music from Juilliard School&#10;• Master's in Music Performance from Berklee&#10;• 10+ years private teaching experience"></textarea>
-                    <div class="form-hint">Degrees, certifications, and notable training.</div>
-                    <div class="form-error" id="educationDetailsError">Education details are required when formal education is selected</div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Teaching Strength 1 <span class="required">*</span></label>
-                <input type="text" class="form-input" id="strength1" placeholder="e.g., Patient with beginners">
-                <div class="form-error" id="strength1Error">Teaching strength 1 is required</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Teaching Strength 2 <span class="required">*</span></label>
-                <input type="text" class="form-input" id="strength2" placeholder="e.g., Strong classical technique">
-                <div class="form-error" id="strength2Error">Teaching strength 2 is required</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Teaching Strength 3</label>
-                <input type="text" class="form-input" id="strength3" placeholder="e.g., Competition preparation">
-            </div>
-            <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(2)"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" onclick="nextStep(2)">Next <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Step 3: Preferences -->
-        <div class="step-card" id="step3">
-            <h2 class="step-title">Teaching Preferences</h2>
-            <p class="step-subtitle">Let us know about your teaching preferences</p>
-            <div class="toggle-group">
-                <span class="toggle-label-text">Are you comfortable teaching special needs students?</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="specialNeeds">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Additional Notes</label>
-                <textarea class="form-textarea" id="additionalNotes" placeholder="Anything else you'd like us to know..."></textarea>
-            </div>
-            <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(3)"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" onclick="nextStep(3)">Next <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Step 4: Locations -->
-        <div class="step-card" id="step4">
-            <h2 class="step-title">Locations & Languages</h2>
-            <p class="step-subtitle">Where do you teach and what languages do you teach in?</p>
-            <div class="form-group">
-                <label class="form-label">Cities You Teach In <span class="required">*</span></label>
-                <div class="form-hint" style="margin-bottom:0.75rem;">Select all cities where you're available to teach</div>
-                <div id="citiesCheckboxGrid" class="checkbox-grid"></div>
-                <div class="form-error" id="citiesError">Please select at least one city</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Languages You Teach In <span class="required">*</span></label>
-                <div class="form-hint" style="margin-bottom:0.75rem;">Select all languages you can teach in</div>
-                <div id="languagesCheckboxGrid" class="checkbox-grid"></div>
-                <div class="form-error" id="languagesError">Please select at least one language</div>
-            </div>
-            <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(4)"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" onclick="nextStep(4)">Next <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Step 5: Student Learning Needs -->
-        <div class="step-card" id="step5">
-            <h2 class="step-title">Student Learning Needs</h2>
-            <p class="step-subtitle">Help us understand your comfort level with different learning styles</p>
-            <div class="comfort-slider-section">
-                <div class="comfort-slider-label">How comfortable are you teaching students with diverse learning needs?</div>
-                <div class="comfort-slider-description">This includes students with ADHD, autism spectrum, dyslexia, sensory processing differences, or other conditions that may require adapted teaching approaches.</div>
-                <div class="comfort-slider-wrapper">
-                    <input type="range" class="comfort-slider" id="learningNeedsComfort" min="1" max="10" value="5" oninput="updateSlider(this)">
-                    <div class="comfort-slider-value" id="sliderValueDisplay">5</div>
-                </div>
-                <div class="comfort-slider-labels"><span>1 - Less comfortable</span><span>10 - Very comfortable</span></div>
-                <div class="comfort-slider-note">
-                    <i class="fas fa-info-circle" style="margin-right:0.5rem;color:var(--success);"></i>
-                    There's no right or wrong answer — we want to match students with teachers who are the best fit. Being honest helps us create better matches for everyone.
-                </div>
-            </div>
-            <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(5)"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" onclick="nextStep(5)">Next <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Step 6: Select Instruments -->
-        <div class="step-card" id="step6">
-            <h2 class="step-title">Select Your Instruments</h2>
-            <p class="step-subtitle">Check all the instruments you teach — you'll fill in details for each one next</p>
-            <div class="form-group">
-                <label class="form-label">Instruments You Teach <span class="required">*</span></label>
-                <div class="form-hint" style="margin-bottom:0.75rem;">Select all that apply. You can add "Other" for unlisted instruments.</div>
-                <div id="instrumentsCheckboxGrid" class="checkbox-grid instruments-grid"></div>
-                <div class="form-error" id="instrumentsSelectError">Please select at least one instrument</div>
-            </div>
-            <div id="selectedInstrumentsSummary" class="selected-instruments-summary" style="display:none;">
-                <h4><i class="fas fa-music" style="margin-right:0.5rem;"></i> You've selected:</h4>
-                <div id="selectedInstrumentsList" class="selected-instruments-list"></div>
-            </div>
-            <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(6)"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" onclick="nextStep(6)">Continue to Details <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Step 7: Instrument Details -->
-        <div class="step-card" id="step7">
-            <h2 class="step-title">Instrument Details</h2>
-            <p class="step-subtitle">Fill in the details for each instrument you teach</p>
-            <div class="instrument-progress" id="instrumentProgress">
-                <span class="instrument-progress-text">Instrument <strong id="currentInstrumentNum">1</strong> of <strong id="totalInstrumentNum">1</strong></span>
-                <div class="instrument-progress-dots" id="instrumentProgressDots"></div>
-            </div>
-            <div class="current-instrument-header">
-                <div class="current-instrument-icon"><i class="fas fa-music"></i></div>
-                <div class="current-instrument-name" id="currentInstrumentName">Piano</div>
-            </div>
-            <div class="form-group" id="otherInstrumentGroup" style="display:none;">
-                <label class="form-label">Specify Instrument Name <span class="required">*</span></label>
-                <input type="text" class="form-input" id="otherInstrumentName" placeholder="e.g., Mandolin, Harmonica">
-                <div class="form-error" id="otherInstrumentError">Please specify the instrument name</div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Highest Teaching Level <span class="required">*</span></label>
-                    <select class="form-select" id="instrumentLevel">
-                        <option value="">Select level...</option>
-                        <option value="beginner">Beginner</option>
-                        <option value="intermediate">Intermediate</option>
-                        <option value="advanced">Advanced</option>
-                    </select>
-                    <div class="form-error" id="instrumentLevelError">Teaching level is required</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Year Started Teaching <span class="required">*</span></label>
-                    <div class="form-hint" style="margin-top:0;margin-bottom:0.375rem;">At our studio or any studio</div>
-                    <input type="number" class="form-input" id="instrumentYearStarted" placeholder="e.g., 2015" min="1950" max="2026">
-                    <div class="form-error" id="instrumentYearError">Year started is required</div>
-                </div>
-            </div>
-            <div class="age-note">
-                <i class="fas fa-lightbulb"></i>
-                <span>Every instrument has a minimum teaching age. This opens opportunities to get more students and fill your schedule — and opens the door for young musicians.</span>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Youngest Age You'd Teach <span class="required">*</span></label>
-                <div class="form-hint" style="margin-top:0;margin-bottom:0.375rem;">What's the youngest age you'd be interested in teaching this instrument?</div>
-                <select class="form-select" id="instrumentYoungestAge"><option value="">Select age...</option></select>
-                <div class="form-error" id="instrumentAgeError">Youngest age is required</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Genres You Specialize In <span class="required">*</span></label>
-                <div class="form-hint" style="margin-top:0;margin-bottom:0.5rem;">At our studio, our teachers teach all genres. If there are areas you specialize in, please select them here.</div>
-                <div class="genre-grid" id="genreGrid"></div>
-                <div class="form-error" id="genreError">Please select at least one genre</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Certifications & Experience <span class="required">*</span></label>
-                <div class="form-hint" style="margin-top:0;margin-bottom:0.5rem;">Add certifications (e.g., MTAC, RCM) and notable experience (e.g., "10 years teaching")</div>
-                <div class="cred-tags-container" id="credentialsContainer">
-                    <span class="tags-placeholder">No certifications or experience added yet</span>
-                </div>
-                <div class="cred-add-row">
-                    <input type="text" id="credentialInput" placeholder="e.g., MTAC Certified, 15 years teaching" onkeypress="if(event.key==='Enter'){event.preventDefault();addCredential();}">
-                    <button type="button" class="btn btn-primary btn-small" onclick="addCredential()"><i class="fas fa-plus"></i> Add</button>
-                </div>
-                <div class="form-error" id="credentialError">Please add at least one certification or experience</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Notes</label>
-                <textarea class="form-textarea" id="instrumentNotes" placeholder="Any additional notes about teaching this instrument..."></textarea>
-            </div>
-            <div class="step-nav">
-                <button class="btn btn-secondary" id="instrumentBackBtn" onclick="prevInstrument()"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" id="instrumentNextBtn" onclick="nextInstrument()">Next Instrument <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Step 8: Review -->
-        <div class="step-card" id="step8">
-            <h2 class="step-title">Review Your Information</h2>
-            <p class="step-subtitle">Please review everything before submitting</p>
-            <div id="reviewContent"></div>
-            <div class="step-nav">
-                <button class="btn btn-secondary" onclick="prevStep(8)"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-success" id="submitBtn" onclick="submitSurvey()"><i class="fas fa-check"></i> Submit Survey</button>
-            </div>
-        </div>
-
-        <!-- Success -->
-        <div class="step-card success-screen" id="successScreen">
-            <div class="success-icon"><i class="fas fa-check"></i></div>
-            <h2>Thank You!</h2>
-            <p>Your teacher profile has been submitted successfully.<br>Our team will review your information and approve your profile shortly.</p>
-        </div>
+        <div class="field"><label class="q" data-help="fYear">Year you started at the studio <span class="opt">(optional)</span></label>
+          <input type="text" id="fYear" inputmode="numeric" maxlength="4" placeholder="e.g., 2024"></div>
+      </div>
     </div>
 
-    <div id="toast" class="toast">
-        <i class="fas fa-exclamation-circle toast-icon"></i>
-        <span class="toast-message"></span>
+    <div class="grp">
+      <div class="gtitle">Where you teach</div>
+      <div class="gsub">Pick your brand first &mdash; the studio list comes from it.</div>
+      <div class="field" id="brandField">
+        <label class="q" data-help="fBrand">Brand <span class="req">*</span></label>
+        <select id="fBrand"><option value="">Loading&hellip;</option></select>
+      </div>
+      <div class="field">
+        <label class="q" data-help="studioInput">Your studios <span class="req">*</span></label>
+        <div class="gsub" style="margin:-3px 0 10px">Add every studio you teach at. The first one is treated as your main studio.</div>
+        <div id="studioBlocked" class="hint">Choose a brand above first.</div>
+        <div id="studioActive" hidden>
+          <div class="taglist" id="studioList"><span class="empty">No studios added yet</span></div>
+          <div class="addrow">
+            <select id="studioInput"><option value="">Select a studio&hellip;</option></select>
+            <button type="button" class="btn soft" id="studioAdd"><svg class="ic"><use href="#i-plus"/></svg> Add</button>
+          </div>
+        </div>
+        <div class="errmsg" id="errStudio" hidden>Please add at least one studio.</div>
+      </div>
+      <div class="field">
+        <label class="q" data-help="langInput">Languages you can teach in <span class="req">*</span></label>
+          <div class="errmsg" id="errLang" hidden>Please add at least one.</div>
+        <div class="gsub" style="margin:-3px 0 10px">English is assumed &mdash; add it only if it helps.</div>
+        <div class="taglist" id="langList"><span class="empty">Nothing added yet</span></div>
+        <div class="addrow">
+          <select id="langInput"><option value="">Choose&hellip;</option></select>
+          <input type="text" id="langOther" placeholder="Type a language&hellip;" hidden>
+          <button type="button" class="btn soft" id="langAdd"><svg class="ic"><use href="#i-plus"/></svg> Add</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STEP 2 — BIO ================= -->
+  <section class="step" data-step="2" data-name="Your bio" hidden>
+    <h2>Tell families about yourself</h2>
+    <p class="lede">This is what a parent or student reads before their first lesson. Write it however sounds like you.</p>
+    <div class="grp">
+      <div class="field">
+        <label class="q" data-help="fBio">Your bio <span class="opt">(optional)</span></label>
+        <textarea id="fBio" style="min-height:190px" placeholder="How long you've been playing and teaching, what you love about it, what a first lesson with you is like&hellip;"></textarea>
+        <div class="hint">A few sentences is plenty. You can always update it later.</div>
+      </div>
+      <div class="field">
+        <label class="q" data-help="fAddl">Anything else we should know? <span class="opt">(optional)</span></label>
+        <textarea id="fAddl" placeholder="Anything that doesn't fit elsewhere."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STEP 3 — BACKGROUND ================= -->
+  <section class="step" data-step="3" data-name="Background" hidden>
+    <h2>Your background</h2>
+    <p class="lede">Training and what you're best at.</p>
+
+    <div class="grp">
+      <div class="gtitle" data-help="formalSeg">Formal music education</div>
+      <div class="gsub">Have you completed formal academic music training?</div>
+      <div class="seg" data-field="formal" id="formalSeg">
+        <button type="button" data-v="yes">Yes</button><button type="button" data-v="no">No</button>
+      </div>
+      <div class="errmsg" id="errFormal" hidden>Please answer yes or no.</div>
+      <div class="errmsg" id="errDegree" hidden>Please add at least one degree or certificate.</div>
+      <div id="eduDetail" hidden style="margin-top:16px">
+        <div id="degreeList"></div>
+        <button type="button" class="btn soft" id="addDegree" style="margin-top:14px">
+          <svg class="ic"><use href="#i-plus"/></svg> Add a degree or certificate</button>
+      </div>
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://kvyvjwepfrqqkvyyutdw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2eXZqd2VwZnJxcWt2eXl1dGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjgyOTgsImV4cCI6MjA4MjgwNDI5OH0.ZayLxzQCEFENvQ9FwpLm4x2le2Y9kJvSslX8DVRzAh8';
+    <div class="grp">
+      <div class="gtitle" data-help="strChips">What are you best at?</div>
+      <div class="gsub">Pick at least 2, up to 3, or add your own.</div>
+      <div class="chips" id="strChips"></div>
+      <div class="field" style="margin-top:12px">
+        <div class="addrow">
+          <input type="text" id="strOther" placeholder="Something not listed&hellip;">
+          <button type="button" class="btn soft" id="strAdd">Add</button>
+        </div>
+      </div>
+      <div class="taglist" id="strList" style="margin-top:12px"><span class="empty">Nothing selected yet</span></div>
+      <div class="cap" id="strCap">0 of 3 selected</div>
+      <div class="errmsg" id="errStr" hidden>Please choose at least 2.</div>
+    </div>
+  </section>
 
-        let supabaseClient;
-        let currentStep = 1;
-        const totalSteps = 8;
-        let cities = [];
-        let languages = [];
-        let selectedInstruments = [];
-        let instruments = [];
-        let currentInstrumentIndex = 0;
-        let selectedPhotoFile = null;
+  <!-- ================= STEP 4 — INSTRUMENTS ================= -->
+  <section class="step" data-step="4" data-name="Instruments" hidden>
+    <h2>What you teach</h2>
+    <p class="lede">Add each instrument you teach. These details are what we use to match students to you, so please fill them in carefully.</p>
+    <div class="grp">
+      <div id="instList"></div>
+      <button type="button" class="btn wide" id="addInst" style="margin-top:16px">
+        <svg class="ic"><use href="#i-plus"/></svg> Add an instrument</button>
+      <div class="errmsg" id="errInst" hidden>Please add at least one instrument.</div>
+      <div class="errmsg" id="errPrimary" hidden>Please mark exactly one instrument as your main one.</div>
+    </div>
+  </section>
 
-        const INSTRUMENT_OPTIONS = ['Banjo','Bass','Cello','Clarinet','Drums','Flute','Guitar','Piano','Saxophone','Trumpet','Ukulele','Viola','Violin','Voice','Other'];
-        const GENRE_OPTIONS = ['Classical','Pop/Contemporary','Rock','Jazz','Worship','Blues','Country','Musical Theater','Folk/Indie','World'];
-        const LANGUAGE_OPTIONS = ['English','Spanish','Mandarin','Cantonese','Korean','Japanese','Vietnamese','Tagalog','French','German','Other'];
-        const PIANO_UKULELE = ['Piano','Ukulele'];
+  <!-- ================= STEP 5 — ADDITIONAL NEEDS ================= -->
+  <section class="step" data-step="5" data-name="Student needs" hidden>
+    <h2>Students with additional needs</h2>
+    <p class="lede">This helps us place students well. There are no wrong answers, and "check with me first"
+       is a perfectly good one. Only the enrollment team sees this &mdash; it is never shown to families.</p>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            updateProgress();
-            loadBrandsAndStates();
-            renderLanguageCheckboxes();
-            renderInstrumentCheckboxes();
-            renderGenreCheckboxes();
-            const slider = document.getElementById('learningNeedsComfort');
-            if (slider) updateSlider(slider);
-        });
+    <div class="grp">
+      <div class="needs">
+        <h4 data-help="ndmode">Neurodivergent students</h4>
+        <div class="nd">ADHD, autism spectrum, dyslexia, sensory processing, anxiety, processing differences.</div>
+        <div class="seg" data-field="ndmode" id="ndmode">
+          <button type="button" data-v="any">Open to any</button><button type="button" data-v="ask">Check with me first</button>
+          <button type="button" data-v="some">Only certain ones</button><button type="button" data-v="no">Not at this time</button>
+        </div>
+        <div class="errmsg" id="ndErr" hidden>Please choose one.</div>
+        <div id="ndNeeds" hidden style="margin-top:16px">
+          <label class="q">Which do you have experience with?</label>
+          <div class="chips" id="ndChips"></div>
+          <div class="errmsg" id="ndChipErr" hidden>Please pick at least one.</div>
+        </div>
+        <div class="sliderbox" id="ndSlider" hidden>
+          <div class="sq">How comfortable do you feel? <b id="ndVal">5/10</b></div>
+          <input type="range" min="1" max="10" value="5" id="ndRange">
+          <div class="ends"><span>1 &mdash; Less comfortable</span><span>10 &mdash; Very comfortable</span></div>
+        </div>
+      </div>
 
-        function updateSlider(slider) {
-            const value = slider.value;
-            const progress = ((value - 1) / 9) * 100;
-            slider.style.setProperty('--slider-progress', progress + '%');
-            document.getElementById('sliderValueDisplay').textContent = value;
+      <div class="needs">
+        <h4 data-help="snmode">Students with disabilities</h4>
+        <div class="nd">Physical and mobility, vision, hearing, speech, developmental delay, medical conditions.</div>
+        <div class="seg" data-field="snmode" id="snmode">
+          <button type="button" data-v="any">Open to any</button><button type="button" data-v="ask">Check with me first</button>
+          <button type="button" data-v="some">Only certain ones</button><button type="button" data-v="no">Not at this time</button>
+        </div>
+        <div class="errmsg" id="snErr" hidden>Please choose one.</div>
+        <div id="snNeeds" hidden style="margin-top:16px">
+          <label class="q">Which do you have experience with?</label>
+          <div class="chips" id="snChips"></div>
+          <div class="errmsg" id="snChipErr" hidden>Please pick at least one.</div>
+        </div>
+        <div class="sliderbox" id="snSlider" hidden>
+          <div class="sq">How comfortable do you feel? <b id="snVal">5/10</b></div>
+          <input type="range" min="1" max="10" value="5" id="snRange">
+          <div class="ends"><span>1 &mdash; Less comfortable</span><span>10 &mdash; Very comfortable</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STEP 6 — REVIEW ================= -->
+  <section class="step" data-step="6" data-name="Review" hidden>
+    <h2>Check it over</h2>
+    <p class="lede">Anything look wrong? Use Edit to jump back.</p>
+    <div id="review"></div>
+    <div class="note">Once you submit, your profile goes to your studio director to review and activate.
+      You won&rsquo;t appear in the directory until they do.</div>
+    <div class="errmsg" id="errSubmit" hidden></div>
+  </section>
+
+  <!-- ================= DONE ================= -->
+  <section class="step" data-step="7" hidden>
+    <div class="done">
+      <div class="tick"><svg class="ic"><use href="#i-check"/></svg></div>
+      <h2>Thank you!</h2>
+      <p>Your information has been sent to your studio director. They&rsquo;ll review it and
+         activate your profile &mdash; you don&rsquo;t need to do anything else.</p>
+    </div>
+  </section>
+
+  <div class="nav" id="nav">
+    <button type="button" class="btn" id="backBtn" hidden><svg class="ic"><use href="#i-back"/></svg> Back</button>
+    <span class="sp"></span>
+    <button type="button" class="btn primary" id="nextBtn">Continue <svg class="ic"><use href="#i-fwd"/></svg></button>
+    <button type="button" class="btn primary" id="submitBtn" hidden>Submit my information</button>
+  </div>
+
+  </form>
+</div>
+
+<!-- ===================== TEMPLATES ===================== -->
+<template id="tpl-degree">
+  <div class="sub">
+    <div class="sub-b">
+      <div class="three">
+        <div class="field"><label class="q">Level <span class="req">*</span></label>
+          <select class="d-level"><option value="">Select&hellip;</option><option>Certificate</option><option>Associate's</option><option>Bachelor's</option><option>Master's</option><option>Doctorate</option><option>Conservatory diploma</option></select>
+          <div class="errmsg d-err-level" hidden>Please choose a level.</div></div>
+        <div class="field"><label class="q">Field <span class="req">*</span></label>
+          <select class="d-field"><option value="">Select&hellip;</option><option>Music Education</option><option>Music Performance</option><option>Music Therapy</option><option>Composition</option><option>Jazz Studies</option><option value="Other">Other</option></select>
+          <input type="text" class="d-fieldother" placeholder="Describe&hellip;" hidden style="margin-top:8px">
+          <div class="errmsg d-err-field" hidden>Please choose a field.</div></div>
+        <div class="field"><label class="q">Instrument / focus <span class="opt">(optional)</span></label>
+          <input type="text" class="d-focus"></div>
+      </div>
+      <div class="three" style="margin-top:18px">
+        <div class="field" style="grid-column:span 2"><label class="q">School <span class="req">*</span></label>
+          <input type="text" class="d-school" placeholder="e.g., University of Utah">
+          <div class="errmsg d-err-school" hidden>Please name the school.</div></div>
+        <div class="field"><label class="q">Year</label>
+          <input type="text" class="d-year" inputmode="numeric" maxlength="4" placeholder="2015"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer">
+          <input type="checkbox" class="d-prog" style="width:16px;height:16px;accent-color:var(--ac)"> Still in progress</label>
+        <button type="button" class="linkdanger d-remove">Remove</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-inst">
+  <div class="sub inst">
+    <div class="sub-h">
+      <span class="nm">Instrument</span>
+      <button type="button" class="linkdanger i-remove">Remove</button>
+    </div>
+    <div class="sub-b">
+
+      <div class="grp">
+        <div class="two">
+          <div class="field"><label class="q" data-help="i-name">Instrument <span class="req">*</span></label>
+            <select class="i-name"><option value="">Select&hellip;</option></select>
+            <input type="text" class="i-other" placeholder="Instrument name&hellip;" hidden style="margin-top:8px">
+            <div class="errmsg i-err-name" hidden>Please choose an instrument.</div></div>
+          <div class="field"><label class="q" data-help="i-role">Is this your main instrument? <span class="req">*</span></label>
+            <div class="seg i-role"><button type="button" data-v="primary">Yes, my main one</button><button type="button" data-v="secondary">I also teach it</button></div>
+            <div class="errmsg i-err-role" hidden>Please choose one.</div></div>
+        </div>
+        <div class="two" style="margin-top:18px">
+          <div class="field"><label class="q" data-help="i-level">Highest level you teach <span class="req">*</span></label>
+            <select class="i-level"><option value="">Select&hellip;</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select>
+            <div class="errmsg i-err-level" hidden>Please choose a level.</div></div>
+          <div class="field"><label class="q" data-help="i-minage">Youngest age you&rsquo;d teach <span class="req">*</span></label>
+            <input type="text" class="i-minage" inputmode="numeric" maxlength="2" placeholder="e.g., 6">
+            <div class="errmsg i-err-age" hidden>Please give a youngest age.</div></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="gtitle" data-help="i-sweetlo">Your sweet spot <span class="q req" style="display:inline">*</span></div>
+        <div class="gsub">The ages you most enjoy teaching, and where you do your best work.</div>
+        <div class="two">
+          <div class="field"><label class="q">From age</label>
+            <input type="text" class="i-sweetlo" inputmode="numeric" maxlength="2" placeholder="7"></div>
+          <div class="field"><label class="q">To age</label>
+            <input type="text" class="i-sweethi" inputmode="numeric" maxlength="2" placeholder="14">
+            <div class="errmsg i-err-sweet" hidden>The sweet spot can&rsquo;t start below your youngest age.</div>
+            <div class="errmsg i-err-sweetreq" hidden>Please give both ages.</div></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="gtitle" data-help="i-yrplay">Experience <span class="q req" style="display:inline">*</span></div>
+        <div class="two">
+          <div class="field"><label class="q">Years playing</label>
+            <input type="text" class="i-yrplay" inputmode="numeric" maxlength="2" placeholder="20"></div>
+          <div class="field"><label class="q">Years teaching</label>
+            <input type="text" class="i-yrteach" inputmode="numeric" maxlength="2" placeholder="9">
+            <div class="errmsg i-err-yrs" hidden>Years teaching can&rsquo;t be more than years playing.</div>
+            <div class="errmsg i-err-yrsreq" hidden>Please give both numbers.</div></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="gtitle" data-help="i-gtable">Genres <span class="q req" style="display:inline">*</span></div>
+        <div class="gsub i-gsub">Mark at least 2. Leave a row blank if it isn&rsquo;t something you teach.</div>
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:12px;cursor:pointer">
+          <input type="checkbox" class="i-allg" style="width:16px;height:16px;accent-color:var(--ac)"> I teach all genres</label><span data-help="i-allg"></span>
+        <div class="gtable i-gtable"></div>
+        <div class="gpick i-gpick" hidden></div>
+        <div class="cap i-gpickcap" hidden>0 of 2 chosen</div>
+        <div class="errmsg i-err-genres" hidden>Please mark at least 2.</div>
+      </div>
+
+      <div class="grp">
+        <div class="gtitle" data-help="i-credsel">Certifications and achievements <span class="q opt" style="display:inline">(up to 4)</span></div>
+        <div class="taglist i-credlist"><span class="empty">Nothing added yet</span></div>
+        <div class="addrow">
+          <select class="i-credsel"><option value="">Choose&hellip;</option><optgroup label="Certifications"><option>MTAC Certified</option><option>MTNA Certified</option><option>RCM Certified</option><option>ABRSM Certified</option><option>Suzuki Trained</option><option>Orff Certified</option><option>Kod&aacute;ly Certified</option><option>Music Together Certified</option></optgroup><optgroup label="Degrees"><option>Bachelor's &mdash; Music Education</option><option>Bachelor's &mdash; Music Performance</option><option>Master's &mdash; Music Education</option><option>Master's &mdash; Music Performance</option><option>Doctorate &mdash; Music</option></optgroup><option value="Other">Other&hellip;</option></select>
+          <input type="text" class="i-credother" placeholder="Type it in&hellip;" hidden>
+          <button type="button" class="btn soft i-credadd">Add</button>
+        </div>
+        <div class="cap i-credcap">0 of 4 added</div>
+      </div>
+
+      <div class="grp">
+        <div class="field"><label class="q" data-help="i-fav">Favorite piece to play or teach <span class="req">*</span></label>
+          <input type="text" class="i-fav" placeholder='e.g., "Clair de Lune"'>
+          <div class="errmsg i-err-fav" hidden>Please name one.</div></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+/* =========================================================
+   CONFIG
+   ========================================================= */
+const SUPABASE_URL = 'https://kvyvjwepfrqqkvyyutdw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2eXZqd2VwZnJxcWt2eXl1dGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjgyOTgsImV4cCI6MjA4MjgwNDI5OH0.ZayLxzQCEFENvQ9FwpLm4x2le2Y9kJvSslX8DVRzAh8';
+const SAVE_KEY  = 'teacherSurveyDraft.v2';
+const SUBMIT_FN = 'submit_teacher_survey';   /* SECURITY DEFINER rpc, anon-executable */
+
+let sb;
+try{ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }catch(e){ console.error(e); }
+
+/* ---------- option lists: these mirror the hub editor ---------- */
+const INSTRUMENTS=['Piano','Guitar','Bass','Drums','Voice','Ukulele','Banjo','Violin','Viola','Cello',
+  'Trumpet','Trombone','Low Brass','Clarinet','Saxophone','Flute'];
+const GENRES=['Classical','Pop / Contemporary','Rock','Jazz','Worship','Blues','Country',
+  'Musical Theater','Folk / Indie','World'];
+const GLEVELS=[['specialize','Specialize'],['comfortable','Comfortable'],['basics','Basics']];
+const STRENGTHS=['Patient with students','Strong technique foundation','Great with beginners',
+  'Classical training','Music theory','Adapts to each student','Recital & stage prep',
+  'Fun & engaging lessons','Encouraging & motivating','Teaches all ages','Great with young children',
+  'Audition prep','Teaches all levels','Builds strong rapport','Competition prep',
+  'Songwriting & composition','Creative approach','Clear communicator','Improvisation',
+  'Kind & supportive','Music reading'];
+const ND_TYPES=['ADHD','Autism spectrum','Dyslexia','Sensory processing','Anxiety','Processing differences'];
+const SN_TYPES=['Physical / mobility','Vision','Hearing','Speech','Developmental delay','Medical conditions'];
+const LANGUAGES=['English','Spanish','Mandarin','Cantonese','Korean','Japanese','Vietnamese','Tagalog',
+  'Russian','Ukrainian','Portuguese','French','German','Italian','Hindi','Punjabi','Arabic','Hebrew',
+  'American Sign Language'];
+
+/* limits — mirrored server-side by the save function */
+const MAX={inst:12,studios:8,langs:10,degrees:6,creds:4,strengths:3};
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const val=el=>(el&&el.value||'').trim();
+const digits=el=>{ el.addEventListener('input',()=>{ el.value=el.value.replace(/[^0-9]/g,''); }); };
+const num=v=>{ const n=parseInt(v,10); return isNaN(n)?null:n; };
+
+/* every number on this form is a text input with digit filtering.
+   type=number lets a scroll wheel change a value silently. */
+document.querySelectorAll('input[inputmode=numeric]').forEach(digits);
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let STUDIOS=[];          /* [{id,name,city,brand}] from supabase */
+let BRANDS=[];
+let photoFile=null, photoDataUrl='';
+let step=1; const LAST=6;
+
+/* =========================================================
+   STEP NAVIGATION
+   ========================================================= */
+const steps=()=>[...document.querySelectorAll('.step')];
+function showStep(n){
+  step=n;
+  steps().forEach(s=>s.hidden = +s.dataset.step!==n);
+  const done = n>LAST;
+  $('nav').hidden = done;
+  $('backBtn').hidden = n<=1 || done;
+  $('nextBtn').hidden = n>=LAST;
+  $('submitBtn').hidden = n!==LAST;
+  $('progWrap').hidden = done;
+  $('pNum').textContent=Math.min(n,LAST); $('pTot').textContent=LAST;
+  const sec=steps().find(s=>+s.dataset.step===n);
+  $('pName').textContent = sec ? (sec.dataset.name||'') : '';
+  $('pFill').style.width = (Math.min(n,LAST)/LAST*100)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(n===LAST) buildReview();
+}
+$('backBtn').addEventListener('click',()=>showStep(step-1));
+$('nextBtn').addEventListener('click',()=>{ if(validateStep(step)) showStep(step+1); });
+
+/* =========================================================
+   FIELD HELP
+   A small "i" beside a label. Opens on hover, on keyboard focus and on
+   tap — teachers fill this in on phones, where hover does not exist.
+   Text lives in HELP, keyed by the id or class already on the field.
+   ========================================================= */
+const HELP={
+  fFirst:'The name families and staff will see. Use the name you go by if it is different from your legal name.',
+  fLast:'Your surname, as you would like it shown on your profile.',
+  fGender:'Used only so the enrollment team can answer a family who asks for a teacher of a particular gender. It is never shown publicly. Choose Other to describe yourself in your own words.',
+  fPron:'However you would like to be described — for example "Non-binary", "they/them", or anything else you prefer.',
+  fYear:'The year you first started teaching at this school. A rough guess is fine.',
+  fBrand:'The school group you teach for. Choosing it narrows the studio list below.',
+  studioInput:'Add every location you teach at. The first one you add is treated as your main studio, so add that one first.',
+  langInput:'Any language you can comfortably run a lesson in, including English. We use this to match families who prefer another language.',
+  fBio:'A short introduction in your own words — families read this. Your training, what you enjoy teaching, and what a lesson with you is like. Optional, but it is the part families notice most.',
+  fAddl:'Anything that does not fit elsewhere: scheduling quirks, a second location, something the office should know.',
+  formalSeg:'Answer yes if you completed a degree, diploma or certificate in music. Answer no if you are self-taught or trained privately — neither answer is better than the other.',
+  strChips:'What you are genuinely best at, in the eyes of your students. Pick at least 2 and at most 3, or type your own. The enrollment team uses these when a family describes what they are looking for.',
+  'i-name':'The instrument you teach. Choose Other if it is not listed, including things like music theory or songwriting.',
+  'i-role':'Mark your main instrument — the one you are strongest on. Exactly one instrument must be your main one, and the rest are ones you also teach.',
+  'i-level':'The highest level you are comfortable taking a student to on this instrument. Choosing Advanced means you also teach beginners and intermediates.',
+  'i-minage':'The youngest age you would take on for this instrument. A student younger than this will not be offered to you.',
+  'i-sweetlo':'The age range where you do your best work. This is not a limit — it tells the team which students to bring you first.',
+  'i-sweethi':'The top of your best-work age range. It can be the same as the from age if you specialize narrowly.',
+  'i-yrplay':'Roughly how many years you have played this instrument yourself.',
+  'i-yrteach':'Roughly how many years you have taught it. This cannot be more than the years you have played.',
+  'i-gtable':'Mark the styles you teach and how well. Specialize means it is a strength, Comfortable means you teach it happily, Basics means you can get a student started. Mark at least 2.',
+  'i-allg':'Tick this if you teach across all styles. You will still be asked to mark the 2 you are most trained in or enjoy most, so the team knows where to place students.',
+  'i-credsel':'Certifications, training programmes or achievements worth mentioning. Choose Other to type your own. Up to 4.',
+  'i-fav':'One piece you love to play or teach. It gives the team something human to mention on a call.',
+  ndmode:'Be honest here — "check with me first" and "not at this time" are both perfectly good answers. It is far better for a student to be placed with the right teacher than for you to be handed a lesson you are not set up for.',
+  snmode:'Same as above: an honest answer means better placements. Only the enrollment team sees this, never families.',
+  ndChips:'Tick the ones you have taught before. This is about experience, not a qualification.',
+  snChips:'Tick the ones you have taught before.',
+  ndRange:'A rough sense of how confident you feel. There is no right number.',
+  snRange:'A rough sense of how confident you feel. There is no right number.'
+};
+
+let helpSeq=0;
+function attachHelp(root){
+  (root||document).querySelectorAll('[data-help]').forEach(host=>{
+    if(host.dataset.helpReady) return;
+    const key=host.dataset.help, text=HELP[key];
+    if(!text) return;
+    host.dataset.helpReady='1';
+    const id='hp'+(++helpSeq);
+    const wrap=document.createElement('span'); wrap.className='hw';
+    wrap.innerHTML='<button type="button" class="hb" aria-expanded="false" aria-controls="'+id+
+      '" aria-label="What is this?">i</button><span class="hp" role="tooltip" id="'+id+'"></span>';
+    const btn=wrap.querySelector('.hb'), pop=wrap.querySelector('.hp');
+    pop.textContent=text;
+    const place=()=>{
+      pop.classList.remove('flipL','flipR');
+      const r=pop.getBoundingClientRect();
+      if(r.right>window.innerWidth-8) pop.classList.add('flipL');
+      else if(r.left<8) pop.classList.add('flipR');
+    };
+    const open=on=>{
+      document.querySelectorAll('.hw.on').forEach(w=>{ if(w!==wrap){ w.classList.remove('on');
+        const b=w.querySelector('.hb'); if(b) b.setAttribute('aria-expanded','false'); } });
+      wrap.classList.toggle('on',on); btn.setAttribute('aria-expanded',on?'true':'false');
+      if(on) place();
+    };
+    /* Always open on click rather than toggling. On a touch screen the tap
+       fires mouseenter first, so a toggle would open and immediately close
+       it — the tap would look like it did nothing. Closing is handled by
+       tapping elsewhere, Escape, or moving the pointer away. */
+    btn.addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); open(true); });
+    btn.addEventListener('mouseenter',()=>open(true));
+    wrap.addEventListener('mouseleave',()=>open(false));
+    btn.addEventListener('focus',()=>open(true));
+    btn.addEventListener('blur',()=>open(false));
+    host.appendChild(wrap);
+  });
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.hw')) document.querySelectorAll('.hw.on').forEach(w=>{
+    w.classList.remove('on'); const b=w.querySelector('.hb'); if(b) b.setAttribute('aria-expanded','false'); });
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.hw.on').forEach(w=>{
+    w.classList.remove('on'); const b=w.querySelector('.hb'); if(b) b.setAttribute('aria-expanded','false'); });
+});
+
+/* =========================================================
+   VALIDATION — only the four required things
+   ========================================================= */
+function markErr(el,on){ if(el) el.classList.toggle('err',!!on); }
+function showErr(id,on){ const e=$(id); if(e) e.hidden=!on; return !on; }
+
+function validateStep(n){
+  let ok=true;
+  if(n===1){
+    const req=BRAND_MODE ? ['fFirst','fLast','fBrand'] : ['fFirst','fLast'];
+    req.forEach(id=>{
+      const bad=!val($(id)); markErr($(id),bad); if(bad) ok=false;
+    });
+    const g=$('fGender').value;
+    markErr($('fGender'),!g); if(!showErr('errGender',!g)) ok=false;
+    /* "Other" on its own tells us nothing, so the description comes with it */
+    const needPron = g==='Other' && !val($('fPron'));
+    markErr($('fPron'),needPron); if(!showErr('errPron',needPron)) ok=false;
+    const noStudio = !document.querySelectorAll('#studioList .tag').length;
+    $('errStudio').hidden=!noStudio; if(noStudio) ok=false;
+    const noLang = !document.querySelectorAll('#langList .tag').length;
+    if(!showErr('errLang',noLang)) ok=false;
+  }
+  if(n===3){
+    const formal=$('formalSeg').dataset.value;
+    if(!showErr('errFormal',!formal)) ok=false;
+    if(formal==='yes'){
+      const cards=[...$('degreeList').children];
+      if(!showErr('errDegree',!cards.length)) ok=false;
+      cards.forEach(d=>{
+        const lv=d.querySelector('.d-level'), fd=d.querySelector('.d-field'),
+              sc=d.querySelector('.d-school'), fo=d.querySelector('.d-fieldother');
+        const badLv=!lv.value, badSc=!val(sc);
+        const badFd=!fd.value || (fd.value==='Other' && !val(fo));
+        d.querySelector('.d-err-level').hidden=!badLv;  markErr(lv,badLv);
+        d.querySelector('.d-err-field').hidden=!badFd;  markErr(fd,badFd); markErr(fo,fd.value==='Other'&&!val(fo));
+        d.querySelector('.d-err-school').hidden=!badSc; markErr(sc,badSc);
+        if(badLv||badFd||badSc) ok=false;
+      });
+    }
+    if(!showErr('errStr',strengths().length<2)) ok=false;
+  }
+  if(n===4){
+    const cards=[...document.querySelectorAll('.inst')];
+    $('errInst').hidden = cards.length>0;
+    if(!cards.length) ok=false;
+    cards.forEach(c=>{
+      const nameSel=c.querySelector('.i-name'), other=c.querySelector('.i-other');
+      const hasName = nameSel.value==='Other' ? !!val(other) : !!nameSel.value;
+      c.querySelector('.i-err-name').hidden=hasName; markErr(nameSel,!hasName); if(!hasName) ok=false;
+      const lvl=c.querySelector('.i-level'), hasLvl=!!lvl.value;
+      c.querySelector('.i-err-level').hidden=hasLvl; markErr(lvl,!hasLvl); if(!hasLvl) ok=false;
+      const age=c.querySelector('.i-minage'), hasAge=!!val(age);
+      c.querySelector('.i-err-age').hidden=hasAge; markErr(age,!hasAge); if(!hasAge) ok=false;
+      const hasRole=!!c.querySelector('.i-role').dataset.value;
+      c.querySelector('.i-err-role').hidden=hasRole; if(!hasRole) ok=false;
+      const fav=c.querySelector('.i-fav'), hasFav=!!val(fav);
+      c.querySelector('.i-err-fav').hidden=hasFav; markErr(fav,!hasFav); if(!hasFav) ok=false;
+      /* two genres either way; only the wording changes when they teach all */
+      const nG=c.querySelectorAll('.grow[data-g][data-lvl]').length;
+      const allG=c.querySelector('.i-allg').checked;
+      const badG = allG ? nG!==2 : nG<2;
+      const gErr=c.querySelector('.i-err-genres');
+      gErr.textContent = allG
+        ? 'Please pick exactly 2 \u2014 the ones you are most trained in or enjoy most.'
+        : 'Please mark at least 2.';
+      gErr.hidden=!badG; if(badG) ok=false;
+      if(!checkInstNumbers(c)) ok=false;
+    });
+    /* the save function requires exactly one primary instrument */
+    const primaries=cards.filter(c=>c.querySelector('.i-role').dataset.value==='primary').length;
+    const badPrimary = cards.length>0 && primaries!==1;
+    $('errPrimary').textContent = primaries===0
+      ? 'Please mark one instrument as your main one.'
+      : 'Only one instrument can be your main one \u2014 you have marked '+primaries+'.';
+    $('errPrimary').hidden=!badPrimary; if(badPrimary) ok=false;
+  }
+  if(n===5){
+    [['ndmode','ndErr','ndChips','ndChipErr'],['snmode','snErr','snChips','snChipErr']]
+      .forEach(([mode,errId,chipsId,chipErrId])=>{
+        const v=$(mode).dataset.value;
+        if(!showErr(errId,!v)) ok=false;
+        const needChip = v==='some' && !chipVals(chipsId).length;
+        if(!showErr(chipErrId,needChip)) ok=false;
+      });
+  }
+  if(!ok){ const bad=document.querySelector('.err,.errmsg:not([hidden])'); if(bad) bad.scrollIntoView({behavior:'smooth',block:'center'}); }
+  return ok;
+}
+/* Keeps the pick-two chips, their cap line and the row data in agreement. */
+function syncPick(c){
+  const chosen=[...c.querySelectorAll('.grow[data-g][data-lvl]')].map(r=>r.dataset.g);
+  c.querySelectorAll('.i-gpick .gchip').forEach(b=>
+    b.classList.toggle('on',chosen.includes(b.dataset.g)));
+  c.querySelector('.i-gpick').classList.toggle('full',chosen.length>=2);
+  c.querySelector('.i-gpickcap').textContent=chosen.length+' of 2 chosen';
+}
+
+function setAllGenres(c,on){
+  c.querySelector('.i-gtable').hidden=on;
+  c.querySelector('.i-gpick').hidden=!on;
+  c.querySelector('.i-gpickcap').hidden=!on;
+  c.querySelector('.i-gsub').textContent = on
+    ? 'You teach everything \u2014 pick the 2 you are most trained in or enjoy most.'
+    : 'Mark at least 2. Leave a row blank if it isn\u2019t something you teach.';
+  if(on){
+    /* carry at most two choices over, as specialize */
+    const keep=[...c.querySelectorAll('.grow[data-g][data-lvl]')].slice(0,2).map(r=>r.dataset.g);
+    c.querySelectorAll('.grow[data-g]').forEach(r=>{
+      delete r.dataset.lvl; r.classList.remove('set');
+      r.querySelectorAll('button[data-lvl]').forEach(x=>x.classList.remove('on'));
+    });
+    keep.forEach(g=>{
+      const r=c.querySelector('.grow[data-g="'+CSS.escape(g)+'"]');
+      if(r){ r.dataset.lvl='specialize'; r.classList.add('set');
+        const btn=r.querySelector('button[data-lvl="specialize"]'); if(btn) btn.classList.add('on'); }
+    });
+  }
+  syncPick(c);
+}
+
+function checkInstNumbers(c){
+  let ok=true;
+  const minAge=num(val(c.querySelector('.i-minage')));
+  const lo=num(val(c.querySelector('.i-sweetlo'))), hi=num(val(c.querySelector('.i-sweethi')));
+  const bothSweet = lo!=null && hi!=null;
+  c.querySelector('.i-err-sweetreq').hidden=bothSweet; if(!bothSweet) ok=false;
+  markErr(c.querySelector('.i-sweetlo'),lo==null); markErr(c.querySelector('.i-sweethi'),hi==null);
+  const badSweet = bothSweet && ((minAge!=null && lo<minAge) || lo>hi);
+  const sweetEl=c.querySelector('.i-err-sweet');
+  sweetEl.textContent = (bothSweet && lo>hi)
+    ? 'The sweet spot can\u2019t end before it starts.'
+    : 'The sweet spot can\u2019t start below your youngest age.';
+  sweetEl.hidden=!badSweet; if(badSweet) ok=false;
+
+  const pl=num(val(c.querySelector('.i-yrplay'))), te=num(val(c.querySelector('.i-yrteach')));
+  const bothYrs = pl!=null && te!=null;
+  c.querySelector('.i-err-yrsreq').hidden=bothYrs; if(!bothYrs) ok=false;
+  markErr(c.querySelector('.i-yrplay'),pl==null); markErr(c.querySelector('.i-yrteach'),te==null);
+  const badYrs = bothYrs && te>pl;
+  c.querySelector('.i-err-yrs').hidden=!badYrs; if(badYrs) ok=false;
+  return ok;
+}
+
+/* =========================================================
+   PHOTO
+   ========================================================= */
+$('photoBtn').addEventListener('click',()=>$('photoInput').click());
+$('photoInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(f.size>5*1024*1024){ alert('That photo is larger than 5MB. Please choose a smaller one.'); return; }
+  photoFile=f;
+  const r=new FileReader();
+  r.onload=()=>{ photoDataUrl=r.result; $('photoPh').style.backgroundImage=`url(${photoDataUrl})`;
+    $('photoClear').hidden=false; save(); };
+  r.readAsDataURL(f);
+});
+$('photoClear').addEventListener('click',()=>{
+  photoFile=null; photoDataUrl=''; $('photoPh').style.backgroundImage='';
+  $('photoInput').value=''; $('photoClear').hidden=true; save();
+});
+
+/* =========================================================
+   SEGMENTED BUTTONS
+   ========================================================= */
+function bindSegs(root){
+  root.querySelectorAll('.seg').forEach(g=>{
+    if(g.dataset.b) return; g.dataset.b='1';
+    g.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+      const already = b.classList.contains('on');
+      g.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      if(!already){ b.classList.add('on'); g.dataset.value=b.dataset.v; }
+      else delete g.dataset.value;      /* clicking again clears it */
+      g.dispatchEvent(new Event('segchange',{bubbles:true}));
+      save();
+    }));
+  });
+}
+bindSegs(document);
+
+/* =========================================================
+   GENDER
+   ========================================================= */
+$('fGender').addEventListener('change',()=>{
+  $('pronWrap').hidden = $('fGender').value!=='Other'; save();
+});
+
+/* =========================================================
+   BRANDS AND STUDIOS  (loaded from supabase)
+   ========================================================= */
+/* The studios table's exact column names are not assumed. Two earlier
+   versions of this guessed at them and were rejected with HTTP 400, so this
+   reads every column and works out the shape at runtime. It logs the column
+   names it found, which is the quickest way to diagnose a studio problem.
+   The brand picker only narrows the studio list — the save function derives
+   the real brand from the chosen studio, so the form still submits correctly
+   when brands cannot be read. */
+let BRAND_MODE=true;
+
+const firstOf=(row,keys)=>{
+  for(const k of keys){
+    if(row[k]!=null && String(row[k]).trim()!=='') return String(row[k]).trim();
+  }
+  return null;
+};
+
+async function loadStudios(){
+  let rows;
+  try{
+    const {data,error}=await sb.from('studios').select('*');
+    if(error) throw error;
+    rows=data||[];
+    console.log('studios: '+rows.length+' rows; columns: '+
+      (rows.length?Object.keys(rows[0]).join(', '):'(none returned)'));
+  }catch(e){
+    console.error('could not read studios',e);
+    $('fBrand').innerHTML='<option value="">Could not load &mdash; please refresh</option>';
+    return;
+  }
+
+  /* brands is optional: without it the form drops to a flat studio list */
+  const brandById={};
+  try{
+    const {data,error}=await sb.from('brands').select('*');
+    if(error) throw error;
+    (data||[]).forEach(b=>{
+      if(b && b.id!=null) brandById[String(b.id)]=firstOf(b,['name','brand_name','title','label']);
+    });
+    console.log('brands: '+Object.keys(brandById).length+' readable');
+  }catch(e){ console.warn('brands not readable, falling back to a flat studio list',e); }
+
+  const retired=r=>r.retired===true||r.is_retired===true||r.archived===true||
+                   r.active===false||r.is_active===false;
+
+  STUDIOS=rows.filter(r=>r && r.id!=null && !retired(r)).map(r=>{
+    const city=firstOf(r,['city','town','location','municipality']);
+    return {
+      id:r.id,
+      city:city,
+      name:firstOf(r,['name','studio_name','location_name','display_name','title','label'])||city,
+      brand:(r.brand_id!=null?brandById[String(r.brand_id)]:null)||
+            firstOf(r,['brand','brand_name'])||null
+    };
+  }).filter(s=>s.name||s.city);
+
+  STUDIOS.sort((a,b)=>String(a.city||a.name||'').localeCompare(String(b.city||b.name||'')));
+  BRANDS=[...new Set(STUDIOS.map(s=>s.brand).filter(Boolean))].sort();
+
+  if(BRANDS.length){
+    BRAND_MODE=true;
+    $('fBrand').innerHTML='<option value="">Select your brand&hellip;</option>'+
+      BRANDS.map(b=>`<option>${esc(b)}</option>`).join('');
+  }else if(STUDIOS.length){
+    BRAND_MODE=false;
+    $('brandField').hidden=true;
+    $('fBrand').innerHTML='<option value=""></option>';
+    const sub=document.querySelector('.gsub');
+    if(sub) sub.textContent='Add every studio you teach at.';
+    refreshStudios();
+  }else{
+    $('fBrand').innerHTML='<option value="">Could not load &mdash; please refresh</option>';
+  }
+}
+
+const studioCount=()=>document.querySelectorAll('#studioList .tag').length;
+function refreshStudios(){
+  const b=$('fBrand').value;
+  const mine=BRAND_MODE ? STUDIOS.filter(s=>s.brand===b) : STUDIOS;
+  const open=BRAND_MODE ? !!b : true;
+  $('studioBlocked').hidden=open; $('studioActive').hidden=!open;
+  $('studioList').querySelector('.empty').style.display=studioCount()?'none':'inline';
+  const used=[...document.querySelectorAll('#studioList .tag')].map(t=>t.dataset.id);
+  $('studioInput').innerHTML='<option value="">Select a studio&hellip;</option>'+
+    mine.filter(s=>!used.includes(String(s.id)))
+        .map(s=>`<option value="${esc(s.id)}">${esc(s.name||s.city)}</option>`).join('');
+  /* the first studio is the main one */
+  [...document.querySelectorAll('#studioList .tag')].forEach((t,i)=>t.classList.toggle('prim',i===0));
+  if(studioCount()) $('errStudio').hidden=true;
+}
+function addStudio(id){
+  if(studioCount()>=MAX.studios) return;
+  const s=STUDIOS.find(x=>String(x.id)===String(id)); if(!s) return;
+  const el=document.createElement('span');
+  el.className='tag'; el.dataset.id=s.id; el.dataset.city=s.city||''; el.dataset.name=s.name||s.city||'';
+  el.innerHTML=`${esc(s.name||s.city)}${s.city?` <span class="sub2">${esc(s.city)}</span>`:''} <button type="button" title="Remove">${ic('x')}</button>`;
+  el.querySelector('button').addEventListener('click',()=>{ el.remove(); refreshStudios(); save(); });
+  $('studioList').appendChild(el); refreshStudios(); save();
+}
+$('fBrand').addEventListener('change',()=>{
+  document.querySelectorAll('#studioList .tag').forEach(t=>t.remove());
+  refreshStudios(); save();
+});
+$('studioAdd').addEventListener('click',()=>{ if($('studioInput').value) addStudio($('studioInput').value); });
+
+/* =========================================================
+   LANGUAGES
+   ========================================================= */
+$('langInput').innerHTML='<option value="">Choose&hellip;</option>'+
+  LANGUAGES.map(l=>`<option>${esc(l)}</option>`).join('')+'<option value="Other">Other&hellip;</option>';
+$('langInput').addEventListener('change',()=>{
+  const other=$('langInput').value==='Other';
+  $('langOther').hidden=!other; if(other) $('langOther').focus();
+});
+function addLang(name){
+  if(!name) return;
+  if([...document.querySelectorAll('#langList .tag')].some(t=>t.dataset.v===name)) return;
+  if(document.querySelectorAll('#langList .tag').length>=MAX.langs) return;
+  const el=document.createElement('span'); el.className='tag'; el.dataset.v=name;
+  el.innerHTML=`${esc(name)} <button type="button" title="Remove">${ic('x')}</button>`;
+  el.querySelector('button').addEventListener('click',()=>{ el.remove(); refreshLangs(); save(); });
+  $('langList').appendChild(el); refreshLangs(); save();
+}
+function refreshLangs(){
+  $('langList').querySelector('.empty').style.display=
+    document.querySelectorAll('#langList .tag').length?'none':'inline';
+}
+$('langAdd').addEventListener('click',()=>{
+  const v = $('langInput').value==='Other' ? val($('langOther')) : $('langInput').value;
+  addLang(v); $('langInput').value=''; $('langOther').value=''; $('langOther').hidden=true;
+});
+
+/* =========================================================
+   DEGREES
+   ========================================================= */
+$('formalSeg').addEventListener('segchange',()=>{
+  /* saying yes means telling us what it was, so open a card straight away */
+  if($('formalSeg').dataset.value==='yes' && !$('degreeList').children.length) addDegree();
+  if($('formalSeg').dataset.value!=='yes') $('errDegree').hidden=true;
+  const yes=$('formalSeg').dataset.value==='yes';
+  $('eduDetail').hidden=!yes;
+  if(yes && !$('degreeList').children.length) addDegree();
+});
+function addDegree(data){
+  if($('degreeList').children.length>=MAX.degrees) return;
+  $('degreeList').appendChild($('tpl-degree').content.cloneNode(true));
+  const card=$('degreeList').lastElementChild;
+  card.querySelectorAll('input[inputmode=numeric]').forEach(digits);
+  card.querySelector('.d-field').addEventListener('change',e=>{
+    card.querySelector('.d-fieldother').hidden = e.target.value!=='Other';
+  });
+  card.querySelector('.d-remove').addEventListener('click',()=>{ card.remove(); save(); });
+  card.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',save));
+  if(data){
+    card.querySelector('.d-level').value=data.level||'';
+    card.querySelector('.d-field').value=data.field||'';
+    card.querySelector('.d-fieldother').value=data.field_other||'';
+    card.querySelector('.d-fieldother').hidden=(data.field!=='Other');
+    card.querySelector('.d-focus').value=data.focus||'';
+    card.querySelector('.d-school').value=data.school||'';
+    card.querySelector('.d-year').value=data.year||'';
+    card.querySelector('.d-prog').checked=!!data.in_progress;
+  }
+  return card;
+}
+$('addDegree').addEventListener('click',()=>addDegree());
+
+/* =========================================================
+   STRENGTHS — up to 3, chips plus your own
+   ========================================================= */
+$('strChips').innerHTML=STRENGTHS.map(s=>
+  `<label class="chip"><input type="checkbox" value="${esc(s)}"> ${esc(s)}</label>`).join('');
+function strengths(){ return [...document.querySelectorAll('#strList .tag')].map(t=>t.dataset.v); }
+function addStrength(v){
+  if(!v) return;
+  if(strengths().includes(v)) return;
+  if(strengths().length>=MAX.strengths) return;
+  const el=document.createElement('span'); el.className='tag'; el.dataset.v=v;
+  el.innerHTML=`${esc(v)} <button type="button" title="Remove">${ic('x')}</button>`;
+  el.querySelector('button').addEventListener('click',()=>{ el.remove(); syncStrengths(); save(); });
+  $('strList').appendChild(el); syncStrengths(); save();
+}
+function syncStrengths(){
+  const chosen=strengths(), full=chosen.length>=MAX.strengths;
+  $('strList').querySelector('.empty').style.display=chosen.length?'none':'inline';
+  $('strCap').textContent=`${chosen.length} of ${MAX.strengths} selected`;
+  document.querySelectorAll('#strChips .chip').forEach(ch=>{
+    const cb=ch.querySelector('input'), on=chosen.includes(cb.value);
+    cb.checked=on; ch.classList.toggle('on',on);
+    ch.classList.toggle('disabled', !on && full);
+  });
+  $('strOther').disabled=full; $('strAdd').disabled=full;
+}
+$('strChips').addEventListener('change',e=>{
+  const cb=e.target; if(cb.tagName!=='INPUT') return;
+  if(cb.checked) addStrength(cb.value);
+  else { const t=[...document.querySelectorAll('#strList .tag')].find(x=>x.dataset.v===cb.value);
+         if(t){ t.remove(); syncStrengths(); save(); } }
+});
+$('strAdd').addEventListener('click',()=>{ addStrength(val($('strOther'))); $('strOther').value=''; });
+
+/* =========================================================
+   NEEDS
+   ========================================================= */
+$('ndChips').innerHTML=ND_TYPES.map(t=>`<label class="chip"><input type="checkbox" value="${esc(t)}"> ${esc(t)}</label>`).join('');
+$('snChips').innerHTML=SN_TYPES.map(t=>`<label class="chip"><input type="checkbox" value="${esc(t)}"> ${esc(t)}</label>`).join('');
+function wireNeeds(mode,chipsId,sliderId,rangeId,valId){
+  const m=$(mode);
+  m.addEventListener('segchange',()=>{
+    const v=m.dataset.value;
+    $(chipsId).hidden = v!=='some';
+    $(sliderId).hidden = !v || v==='no';
+  });
+  $(rangeId).addEventListener('input',()=>{ $(valId).textContent=$(rangeId).value+'/10'; save(); });
+  $(chipsId.replace('Needs','Chips')).addEventListener('change',e=>{
+    const ch=e.target.closest('.chip'); if(ch) ch.classList.toggle('on',e.target.checked); save();
+  });
+}
+wireNeeds('ndmode','ndNeeds','ndSlider','ndRange','ndVal');
+wireNeeds('snmode','snNeeds','snSlider','snRange','snVal');
+
+/* =========================================================
+   INSTRUMENTS
+   ========================================================= */
+function addInst(data){
+  if(document.querySelectorAll('.inst').length>=MAX.inst) return;
+  $('instList').appendChild($('tpl-inst').content.cloneNode(true));
+  const c=$('instList').lastElementChild;
+  c.querySelectorAll('input[inputmode=numeric]').forEach(digits);
+  bindSegs(c);
+
+  const sel=c.querySelector('.i-name');
+  sel.innerHTML='<option value="">Select&hellip;</option>'+
+    INSTRUMENTS.map(i=>`<option>${esc(i)}</option>`).join('')+'<option value="Other">Other</option>';
+  const setName=()=>{
+    const n = sel.value==='Other' ? (val(c.querySelector('.i-other'))||'Other') : (sel.value||'Instrument');
+    c.querySelector('.nm').textContent=n;
+  };
+  sel.addEventListener('change',()=>{ c.querySelector('.i-other').hidden = sel.value!=='Other'; setName(); save(); });
+  c.querySelector('.i-other').addEventListener('input',()=>{ setName(); save(); });
+
+  /* genre table */
+  const gt=c.querySelector('.i-gtable');
+  gt.hidden=false;
+  gt.innerHTML=`<div class="grow head"><span>Genre</span>${GLEVELS.map(([,l])=>`<span>${l}</span>`).join('')}</div>`+
+    GENRES.map(g=>`<div class="grow" data-g="${esc(g)}"><div class="gn">${esc(g)}</div>`+
+      GLEVELS.map(([k])=>`<div class="gopt"><button type="button" data-lvl="${k}">${ic('check')}</button></div>`).join('')+
+    `</div>`).join('');
+  gt.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-lvl]'); if(!b) return;
+    const row=b.closest('.grow'), on=b.classList.contains('on');
+    row.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    if(!on){ b.classList.add('on'); row.dataset.lvl=b.dataset.lvl; } else delete row.dataset.lvl;
+    row.classList.toggle('set',!!row.dataset.lvl); save();
+  });
+  /* "I teach all genres" swaps the three-level grid for a simple pick-two
+     list. The grid rows stay as the single source of truth so everything
+     downstream — collect, restore, validation — is unchanged; the chips just
+     set those rows to 'specialize'. */
+  const gp=c.querySelector('.i-gpick');
+  gp.innerHTML=GENRES.map(g=>`<button type="button" class="gchip" data-g="${esc(g)}">${esc(g)}</button>`).join('');
+  gp.addEventListener('click',ev=>{
+    const b=ev.target.closest('.gchip'); if(!b) return;
+    const row=c.querySelector('.grow[data-g="'+CSS.escape(b.dataset.g)+'"]');
+    const on=b.classList.contains('on');
+    if(!on && c.querySelectorAll('.i-gpick .gchip.on').length>=2) return;
+    if(on){ delete row.dataset.lvl; } else { row.dataset.lvl='specialize'; }
+    row.classList.toggle('set',!!row.dataset.lvl);
+    row.querySelectorAll('button[data-lvl]').forEach(x=>
+      x.classList.toggle('on', !on && x.dataset.lvl==='specialize'));
+    syncPick(c); save();
+  });
+  c.querySelector('.i-allg').addEventListener('change',e=>{ setAllGenres(c,e.target.checked); save(); });
+
+  /* credentials */
+  const credSel=c.querySelector('.i-credsel'), credOther=c.querySelector('.i-credother');
+  credSel.addEventListener('change',()=>{ credOther.hidden=credSel.value!=='Other'; if(!credOther.hidden) credOther.focus(); });
+  const creds=()=>[...c.querySelectorAll('.i-credlist .tag')];
+  const refreshCreds=()=>{
+    c.querySelector('.i-credlist .empty').style.display=creds().length?'none':'inline';
+    c.querySelector('.i-credcap').textContent=`${creds().length} of ${MAX.creds} added`;
+  };
+  const addCred=v=>{
+    if(!v||creds().length>=MAX.creds) return;
+    if(creds().some(t=>t.dataset.v===v)) return;
+    const el=document.createElement('span'); el.className='tag'; el.dataset.v=v;
+    el.innerHTML=`${esc(v)} <button type="button" title="Remove">${ic('x')}</button>`;
+    el.querySelector('button').addEventListener('click',()=>{ el.remove(); refreshCreds(); save(); });
+    c.querySelector('.i-credlist').appendChild(el); refreshCreds(); save();
+  };
+  c.querySelector('.i-credadd').addEventListener('click',()=>{
+    addCred(credSel.value==='Other'?val(credOther):credSel.value);
+    credSel.value=''; credOther.value=''; credOther.hidden=true;
+  });
+
+  c.querySelector('.i-remove').addEventListener('click',()=>{ c.remove(); save(); });
+  c.querySelectorAll('input,select,textarea').forEach(el=>{
+    el.addEventListener('change',()=>{ checkInstNumbers(c); save(); });
+    el.addEventListener('input',()=>{ checkInstNumbers(c); });
+  });
+
+  if(data) fillInst(c,data);
+  setName();
+  return c;
+}
+$('addInst').addEventListener('click',()=>{ addInst(); $('errInst').hidden=true; attachHelp(); });
+
+function fillInst(c,d){
+  const sel=c.querySelector('.i-name');
+  if(d.name && INSTRUMENTS.includes(d.name)) sel.value=d.name;
+  else if(d.name){ sel.value='Other'; c.querySelector('.i-other').hidden=false; c.querySelector('.i-other').value=d.name; }
+  if(d.role){ const b=c.querySelector(`.i-role button[data-v="${d.role}"]`); if(b){ b.classList.add('on'); c.querySelector('.i-role').dataset.value=d.role; } }
+  c.querySelector('.i-level').value=d.level||'';
+  c.querySelector('.i-minage').value=d.min_age??'';
+  c.querySelector('.i-sweetlo').value=d.sweet_lo??'';
+  c.querySelector('.i-sweethi').value=d.sweet_hi??'';
+  c.querySelector('.i-yrplay').value=d.years_playing??'';
+  c.querySelector('.i-yrteach').value=d.years_teaching??'';
+  c.querySelector('.i-fav').value=d.favorite||'';
+  /* Set the checkbox, restore the saved rows, and only THEN switch modes —
+     setAllGenres reads those rows, so calling it first would wipe them. */
+  if(d.all_genres){ c.querySelector('.i-allg').checked=true; }
+  Object.entries(d.genres||{}).forEach(([g,lvl])=>{
+    const row=c.querySelector(`.grow[data-g="${CSS.escape(g)}"]`); if(!row) return;
+    const b=row.querySelector(`button[data-lvl="${lvl}"]`); if(b){ b.classList.add('on'); row.dataset.lvl=lvl; row.classList.add('set'); }
+  });
+  setAllGenres(c, c.querySelector('.i-allg').checked);
+  (d.credentials||[]).forEach(v=>{
+    const el=document.createElement('span'); el.className='tag'; el.dataset.v=v;
+    el.innerHTML=`${esc(v)} <button type="button" title="Remove">${ic('x')}</button>`;
+    el.querySelector('button').addEventListener('click',()=>{ el.remove(); save(); });
+    c.querySelector('.i-credlist').appendChild(el);
+  });
+  const n=c.querySelectorAll('.i-credlist .tag').length;
+  if(n){ c.querySelector('.i-credlist .empty').style.display='none';
+         c.querySelector('.i-credcap').textContent=`${n} of ${MAX.creds} added`; }
+}
+
+/* =========================================================
+   COLLECT
+   ========================================================= */
+function collectInst(c){
+  const sel=c.querySelector('.i-name');
+  const name = sel.value==='Other' ? val(c.querySelector('.i-other')) : sel.value;
+  const genres={};
+  c.querySelectorAll('.grow[data-g]').forEach(r=>{ if(r.dataset.lvl) genres[r.dataset.g]=r.dataset.lvl; });
+  return {
+    name,
+    role: c.querySelector('.i-role').dataset.value||null,
+    level: c.querySelector('.i-level').value||null,
+    min_age: num(val(c.querySelector('.i-minage'))),
+    sweet_lo: num(val(c.querySelector('.i-sweetlo'))),
+    sweet_hi: num(val(c.querySelector('.i-sweethi'))),
+    years_playing: num(val(c.querySelector('.i-yrplay'))),
+    years_teaching: num(val(c.querySelector('.i-yrteach'))),
+    all_genres: c.querySelector('.i-allg').checked,
+    genres,
+    credentials: [...c.querySelectorAll('.i-credlist .tag')].map(t=>t.dataset.v),
+    favorite: val(c.querySelector('.i-fav'))
+  };
+}
+function collectDegrees(){
+  return [...$('degreeList').children].map(d=>({
+    level: d.querySelector('.d-level').value||null,
+    field: d.querySelector('.d-field').value||null,
+    field_other: val(d.querySelector('.d-fieldother'))||null,
+    focus: val(d.querySelector('.d-focus'))||null,
+    school: val(d.querySelector('.d-school'))||null,
+    year: num(val(d.querySelector('.d-year'))),
+    in_progress: d.querySelector('.d-prog').checked
+  })).filter(d=>d.level||d.field||d.school);
+}
+function chipVals(id){ return [...document.querySelectorAll('#'+id+' input:checked')].map(i=>i.value); }
+function collect(){
+  return {
+    first_name: val($('fFirst')),
+    last_name:  val($('fLast')),
+    gender:     $('fGender').value||null,
+    pronouns:   val($('fPron'))||null,
+    year_started_at_studio: num(val($('fYear'))),
+    brand:      $('fBrand').value||null,
+    studios:    [...document.querySelectorAll('#studioList .tag')].map((t,i)=>({
+                  studio_id:t.dataset.id, is_primary:i===0, order_index:i })),
+    languages:  [...document.querySelectorAll('#langList .tag')].map(t=>t.dataset.v),
+    bio:        val($('fBio'))||null,
+    additional_notes: val($('fAddl'))||null,
+    formal_music_education: $('formalSeg').dataset.value ? $('formalSeg').dataset.value==='yes' : null,
+    degrees:    collectDegrees(),
+    strength_tags: strengths(),
+    instruments: [...document.querySelectorAll('.inst')].map(collectInst),
+    needs: {
+      neurodivergent:{ mode:$('ndmode').dataset.value||null, experience:chipVals('ndChips'),
+                       comfort:$('ndmode').dataset.value && $('ndmode').dataset.value!=='no' ? num($('ndRange').value) : null },
+      disability:    { mode:$('snmode').dataset.value||null, experience:chipVals('snChips'),
+                       comfort:$('snmode').dataset.value && $('snmode').dataset.value!=='no' ? num($('snRange').value) : null }
+    }
+  };
+}
+
+/* =========================================================
+   SAVE AND RESUME — this browser only, nothing sent anywhere
+   ========================================================= */
+let saveTimer;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    try{
+      const d=collect(); d._photo=photoDataUrl; d._step=step;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+      const n=$('savedNote'); n.hidden=false; clearTimeout(n._t);
+      n._t=setTimeout(()=>{ n.hidden=true; },1600);
+    }catch(e){ /* private browsing, quota, etc — the form still works */ }
+  },400);
+}
+document.addEventListener('input',save);
+document.addEventListener('change',save);
+
+function restore(){
+  let d; try{ d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return false; }
+  if(!d||!d.first_name&&!d.last_name&&!(d.instruments||[]).length) return false;
+  $('fFirst').value=d.first_name||''; $('fLast').value=d.last_name||'';
+  $('fGender').value=d.gender||''; $('pronWrap').hidden=d.gender!=='Other'; $('fPron').value=d.pronouns||'';
+  $('fYear').value=d.year_started_at_studio??'';
+  $('fBio').value=d.bio||''; $('fAddl').value=d.additional_notes||'';
+  if(d._photo){ photoDataUrl=d._photo; $('photoPh').style.backgroundImage=`url(${photoDataUrl})`; $('photoClear').hidden=false; }
+  if(BRAND_MODE && d.brand){ $('fBrand').value=d.brand; }
+  if(!BRAND_MODE || d.brand){ refreshStudios(); (d.studios||[]).forEach(s=>addStudio(s.studio_id)); }
+  (d.languages||[]).forEach(addLang);
+  if(d.formal_music_education!=null){
+    const v=d.formal_music_education?'yes':'no';
+    const b=$('formalSeg').querySelector(`button[data-v="${v}"]`);
+    if(b){ b.classList.add('on'); $('formalSeg').dataset.value=v; $('eduDetail').hidden=(v!=='yes'); }
+  }
+  (d.degrees||[]).forEach(addDegree);
+  (d.strength_tags||[]).forEach(addStrength);
+  (d.instruments||[]).forEach(addInst);
+  ['neurodivergent','disability'].forEach((k,i)=>{
+    const n=(d.needs||{})[k]||{}, seg=$(i?'snmode':'ndmode');
+    if(n.mode){ const b=seg.querySelector(`button[data-v="${n.mode}"]`);
+      if(b){ b.classList.add('on'); seg.dataset.value=n.mode;
+        $(i?'snNeeds':'ndNeeds').hidden=n.mode!=='some';
+        $(i?'snSlider':'ndSlider').hidden=(n.mode==='no'); } }
+    (n.experience||[]).forEach(v=>{
+      const cb=document.querySelector(`#${i?'snChips':'ndChips'} input[value="${CSS.escape(v)}"]`);
+      if(cb){ cb.checked=true; cb.closest('.chip').classList.add('on'); }
+    });
+    if(n.comfort){ $(i?'snRange':'ndRange').value=n.comfort; $(i?'snVal':'ndVal').textContent=n.comfort+'/10'; }
+  });
+  syncStrengths(); refreshLangs();
+  return true;
+}
+
+/* =========================================================
+   REVIEW
+   ========================================================= */
+function row(k,v){ const empty=v==null||v===''||(Array.isArray(v)&&!v.length);
+  return `<div class="rr"><span class="k">${esc(k)}</span><span class="v${empty?' none':''}">${empty?'Not given':esc(Array.isArray(v)?v.join(', '):v)}</span></div>`; }
+function sec(title,stepNo,rows){
+  return `<div class="rev"><div class="rh">${esc(title)}<button type="button" data-goto="${stepNo}">Edit</button></div>${rows}</div>`;
+}
+const LVL_LABEL={beginner:'Beginner',intermediate:'Intermediate',advanced:'Advanced'};
+const MODE_LABEL={any:'Open to any',ask:'Check with me first',some:'Only certain ones',no:'Not at this time'};
+function buildReview(){
+  const d=collect();
+  let h='';
+  h+=sec('About you',1,
+      row('Name',[d.first_name,d.last_name].filter(Boolean).join(' '))+
+      row('Photo',photoDataUrl?'Added':'')+
+      row('Gender',d.gender==='Other'?d.pronouns:d.gender)+
+      row('Year started',d.year_started_at_studio)+
+      row('Brand',d.brand)+
+      row('Studios',d.studios.map((s,i)=>{
+        const t=document.querySelector(`#studioList .tag[data-id="${CSS.escape(s.studio_id)}"]`);
+        return (t?t.dataset.name:'')+(i===0?' (main)':''); }))+
+      row('Languages',d.languages));
+  h+=sec('Your bio',2, row('Bio',d.bio)+row('Anything else',d.additional_notes));
+  h+=sec('Background',3,
+      row('Formal music education', d.formal_music_education==null?'':(d.formal_music_education?'Yes':'No'))+
+      row('Degrees', d.degrees.map(x=>[x.level,x.field==='Other'?x.field_other:x.field,x.school].filter(Boolean).join(' — ')))+
+      row('Best at', d.strength_tags));
+  h+=sec('What you teach',4, d.instruments.length
+      ? d.instruments.map(i=>row(i.name||'Instrument',
+          [LVL_LABEL[i.level]||'', i.min_age!=null?`from age ${i.min_age}`:'',
+           i.sweet_lo!=null&&i.sweet_hi!=null?`sweet spot ${i.sweet_lo}–${i.sweet_hi}`:'',
+           i.all_genres?'all genres':Object.keys(i.genres).join(', '),
+           i.credentials.join(', ')].filter(Boolean).join(' · '))).join('')
+      : row('Instruments',''));
+  h+=sec('Students with additional needs',5,
+      row('Neurodivergent', [MODE_LABEL[d.needs.neurodivergent.mode]||'',
+          d.needs.neurodivergent.comfort?`comfort ${d.needs.neurodivergent.comfort}/10`:''].filter(Boolean).join(' · '))+
+      row('Disabilities', [MODE_LABEL[d.needs.disability.mode]||'',
+          d.needs.disability.comfort?`comfort ${d.needs.disability.comfort}/10`:''].filter(Boolean).join(' · ')));
+  $('review').innerHTML=h;
+  $('review').querySelectorAll('[data-goto]').forEach(b=>
+    b.addEventListener('click',()=>showStep(+b.dataset.goto)));
+}
+
+/* =========================================================
+   PAYLOAD MAPPER
+   collect() returns the draft shape used for save/resume and the review
+   step. submit_teacher_survey() expects a different, nested shape whose
+   names match the database columns. This translates one into the other.
+   Keep this in step with the function's allowlists — an unknown key makes
+   the function reject the whole submission.
+   ========================================================= */
+const CAPS={studios:8,instruments:12,languages:10,degrees:6,strength_tags:3};
+
+function toRpc(d,photoUrl){
+  const S=v=>{ const t=(v==null?'':String(v)).trim(); return t===''?null:t; };
+  const N=v=>{ if(v==null||v==='') return null; const n=+v; return isFinite(n)?Math.trunc(n):null; };
+  const B=v=>typeof v==='boolean'?v:null;
+  const nd=(d.needs&&d.needs.neurodivergent)||{};
+  const sn=(d.needs&&d.needs.disability)||{};
+  return {
+    /* brand and state are deliberately NOT sent: the function derives both
+       from the first selected studio. */
+    teacher:{
+      first_name:S(d.first_name),
+      last_name:S(d.last_name),
+      gender:S(d.gender),
+      pronouns:S(d.pronouns),
+      year_started_at_studio:N(d.year_started_at_studio),
+      formal_music_education:B(d.formal_music_education),
+      bio:S(d.bio),
+      photo_url:S(photoUrl),
+      additional_notes:S(d.additional_notes)
+    },
+    studios:(d.studios||[]).map(s=>({studio_id:s.studio_id})),
+    languages:(d.languages||[]).map(S).filter(Boolean),
+    instruments:(d.instruments||[]).map(i=>({
+      instrument:S(i.name),
+      teacher_level:S(i.level),
+      youngest_age_preference:N(i.min_age),
+      detail:{
+        role:S(i.role),
+        sweet_age_min:N(i.sweet_lo),
+        sweet_age_max:N(i.sweet_hi),
+        years_playing:N(i.years_playing),
+        years_teaching:N(i.years_teaching),
+        teaches_all_genres:!!i.all_genres,
+        favorite_piece:S(i.favorite)
+      },
+      genres:Object.keys(i.genres||{}).map(g=>({
+        genre:g, level:i.genres[g], is_specialty:i.genres[g]==='specialize'
+      })),
+      credentials:(i.credentials||[]).map(S).filter(Boolean)
+    })),
+    /* a "no" answer never sends degrees, even if cards were filled and then
+       the answer was changed */
+    degrees:(d.formal_music_education===false?[]:(d.degrees||[])).map(g=>({
+      level:S(g.level), field:S(g.field), field_other:S(g.field_other),
+      focus:S(g.focus), school:S(g.school),
+      graduation_year:N(g.year), in_progress:!!g.in_progress
+    })),
+    student_needs:{
+      neurodivergent_mode:S(nd.mode),
+      neurodivergent_experience:(nd.experience||[]).map(S).filter(Boolean),
+      neurodivergent_comfort:N(nd.comfort),
+      disability_mode:S(sn.mode),
+      disability_experience:(sn.experience||[]).map(S).filter(Boolean),
+      disability_comfort:N(sn.comfort)
+    },
+    strength_tags:(d.strength_tags||[]).map(S).filter(Boolean)
+  };
+}
+
+/* The function rejects an oversized submission outright. Say so in plain
+   language here rather than letting a Postgres error reach the teacher. */
+function capProblem(rpc){
+  const LABEL={studios:'studios',instruments:'instruments',
+    languages:'languages',degrees:'degrees',strength_tags:'teaching strengths'};
+  for(const k of Object.keys(CAPS)){
+    const n=(rpc[k]||[]).length;
+    if(n>CAPS[k]) return 'You have listed '+n+' '+LABEL[k]+'. The most we can accept is '+CAPS[k]+'.';
+  }
+  for(const i of rpc.instruments){
+    if((i.genres||[]).length>16) return 'One instrument has more than 16 styles listed.';
+    if((i.credentials||[]).length>4) return 'One instrument has more than 4 certifications listed.';
+  }
+  return null;
+}
+
+/* =========================================================
+   SUBMIT
+   ========================================================= */
+$('submitBtn').addEventListener('click',async()=>{
+  /* re-run the required checks; the review step can be reached and then edited */
+  for(const n of [1,3,4,5]) if(!validateStep(n)){ showStep(n); return; }
+
+  const btn=$('submitBtn'); btn.disabled=true; btn.textContent='Sending…';
+  $('errSubmit').hidden=true;
+
+  try{
+    const draft=collect();
+
+    /* photo goes to storage first; the function only stores the url */
+    let photoUrl=null;
+    if(photoFile){
+      try{
+        const ext=(photoFile.name.split('.').pop()||'jpg').toLowerCase();
+        const path=`survey/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+        const up=await sb.storage.from('teacher-photos').upload(path,photoFile,{upsert:true});
+        if(!up.error){
+          const {data}=sb.storage.from('teacher-photos').getPublicUrl(path);
+          if(data && /^https:\/\//i.test(data.publicUrl||'')) photoUrl=data.publicUrl;
         }
+      }catch(e){ console.warn('photo upload failed, continuing without it',e); }
+    }
 
-        // ============ PHOTO ============
-        function handlePhotoSelect(input) {
-            const file = input.files[0];
-            if (!file) return;
-            if (file.size > 5 * 1024 * 1024) { showToast('Photo must be under 5MB'); input.value = ''; return; }
-            selectedPhotoFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('photoPreview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                document.getElementById('photoRemoveBtn').style.display = 'block';
-                document.getElementById('photoUploadArea').classList.remove('error');
-            };
-            reader.readAsDataURL(file);
-        }
+    const payload=toRpc(draft,photoUrl);
+    const capMsg=capProblem(payload);
+    if(capMsg){
+      $('errSubmit').hidden=false; $('errSubmit').textContent=capMsg;
+      btn.disabled=false; btn.textContent='Submit my information';
+      return;
+    }
 
-        function removePhoto() {
-            selectedPhotoFile = null;
-            document.getElementById('photoFileInput').value = '';
-            document.getElementById('photoPreview').innerHTML = '<i class="fas fa-user"></i>';
-            document.getElementById('photoRemoveBtn').style.display = 'none';
-        }
+    const {error}=await sb.rpc(SUBMIT_FN,{payload});
+    if(error) throw error;
 
-        async function uploadSurveyPhoto(teacherId) {
-            if (!selectedPhotoFile) return null;
-            const ext = selectedPhotoFile.name.split('.').pop();
-            const path = `${teacherId}/profile.${ext}`;
-            const { error } = await supabaseClient.storage.from('teacher-photos').upload(path, selectedPhotoFile, { upsert: true });
-            if (error) throw error;
-            const { data } = supabaseClient.storage.from('teacher-photos').getPublicUrl(path);
-            return data.publicUrl + '?t=' + Date.now();
-        }
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    showStep(7);
+  }catch(e){
+    console.error(e);
+    $('errSubmit').hidden=false;
+    $('errSubmit').textContent='Sorry — that didn’t send. Please check your connection and try again. '+
+      'If it keeps happening, let your studio director know. ('+(e.message||'unknown error')+')';
+    btn.disabled=false; btn.textContent='Submit my information';
+  }
+});
 
-        // ============ BRANDS / STATES ============
-        let allStudios = [];
-
-        async function loadBrandsAndStates() {
-            try {
-                const result = await supabaseClient.from('studios').select('brand, state, city, brands:brand_id(name)').order('city');
-                if (result.error) throw result.error;
-                allStudios = (result.data || []).map(s => ({ brand: s.brands?.name || s.brand || null, state: s.state, city: s.city }));
-                const states = [...new Set(allStudios.map(s => s.state).filter(Boolean))].sort();
-                const stateSelect = document.getElementById('state');
-                states.forEach(st => { const opt = document.createElement('option'); opt.value = st; opt.textContent = st; stateSelect.appendChild(opt); });
-                document.getElementById('state').addEventListener('change', onStateChange);
-            } catch (error) { console.error('Error loading brands:', error); }
-        }
-
-        function onStateChange() {
-            const state = document.getElementById('state').value;
-            const brandSelect = document.getElementById('brand');
-            brandSelect.innerHTML = '<option value="">Select studio/brand...</option>';
-            cities = []; renderCityCheckboxes();
-            if (!state) return;
-            const brandsInState = [...new Set(allStudios.filter(s => s.state === state).map(s => s.brand).filter(Boolean))].sort();
-            brandsInState.forEach(b => { const opt = document.createElement('option'); opt.value = b; opt.textContent = b; brandSelect.appendChild(opt); });
-            brandSelect.addEventListener('change', onBrandChange);
-        }
-
-        function onBrandChange() { cities = []; renderCityCheckboxes(); }
-
-        function renderCityCheckboxes() {
-            const state = document.getElementById('state').value;
-            const brand = document.getElementById('brand').value;
-            const grid = document.getElementById('citiesCheckboxGrid');
-            if (!state || !brand) { grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">Select a state and brand first</p>'; return; }
-            const citiesForBrand = [...new Set(allStudios.filter(s => s.state === state && s.brand === brand).map(s => s.city).filter(Boolean))].sort();
-            if (citiesForBrand.length === 0) { grid.innerHTML = '<p style="color:var(--text-light);font-size:0.875rem;">No cities found for this brand</p>'; return; }
-            grid.innerHTML = citiesForBrand.map(city => `
-                <div class="checkbox-item ${cities.includes(city) ? 'selected' : ''}" onclick="toggleCityCheckbox(this, '${city}')">
-                    <span class="check-icon"><i class="fas fa-check"></i></span>
-                    <span class="check-label">${city}</span>
-                </div>`).join('');
-        }
-
-        function toggleCityCheckbox(el, city) {
-            const idx = cities.indexOf(city);
-            if (idx === -1) { cities.push(city); el.classList.add('selected'); }
-            else { cities.splice(idx, 1); el.classList.remove('selected'); }
-        }
-
-        function renderLanguageCheckboxes() {
-            document.getElementById('languagesCheckboxGrid').innerHTML = LANGUAGE_OPTIONS.map(lang => `
-                <div class="checkbox-item ${languages.includes(lang) ? 'selected' : ''}" onclick="toggleLanguageCheckbox(this, '${lang}')">
-                    <span class="check-icon"><i class="fas fa-check"></i></span>
-                    <span class="check-label">${lang}</span>
-                </div>`).join('');
-        }
-
-        function toggleLanguageCheckbox(el, lang) {
-            const idx = languages.indexOf(lang);
-            if (idx === -1) { languages.push(lang); el.classList.add('selected'); }
-            else { languages.splice(idx, 1); el.classList.remove('selected'); }
-        }
-
-        function renderInstrumentCheckboxes() {
-            document.getElementById('instrumentsCheckboxGrid').innerHTML = INSTRUMENT_OPTIONS.map(inst => `
-                <div class="checkbox-item ${selectedInstruments.includes(inst) ? 'selected' : ''}" onclick="toggleInstrumentCheckbox(this, '${inst}')">
-                    <span class="check-icon"><i class="fas fa-check"></i></span>
-                    <span class="check-label">${inst}</span>
-                </div>`).join('');
-            updateSelectedInstrumentsSummary();
-        }
-
-        function toggleInstrumentCheckbox(el, inst) {
-            const idx = selectedInstruments.indexOf(inst);
-            if (idx === -1) { selectedInstruments.push(inst); el.classList.add('selected'); }
-            else { selectedInstruments.splice(idx, 1); el.classList.remove('selected'); }
-            updateSelectedInstrumentsSummary();
-        }
-
-        function updateSelectedInstrumentsSummary() {
-            const summary = document.getElementById('selectedInstrumentsSummary');
-            if (selectedInstruments.length === 0) { summary.style.display = 'none'; return; }
-            summary.style.display = 'block';
-            document.getElementById('selectedInstrumentsList').innerHTML = selectedInstruments.map(inst => `<span class="selected-instrument-tag">${inst}</span>`).join('');
-        }
-
-        function renderGenreCheckboxes() {
-            document.getElementById('genreGrid').innerHTML = GENRE_OPTIONS.map(g => `
-                <div class="genre-checkbox" onclick="toggleGenreCheckbox(this, '${g}')">
-                    <span class="genre-check-icon"><i class="fas fa-check"></i></span>
-                    <span class="genre-label">${g}</span>
-                </div>`).join('');
-        }
-
-        function toggleGenreCheckbox(el) { el.classList.toggle('selected'); }
-
-        function getSelectedGenres() {
-            const selected = [];
-            document.querySelectorAll('#genreGrid .genre-checkbox.selected').forEach(el => selected.push(el.querySelector('.genre-label').textContent));
-            return selected;
-        }
-
-        function setSelectedGenres(genres) {
-            document.querySelectorAll('#genreGrid .genre-checkbox').forEach(el => {
-                el.classList.toggle('selected', genres.includes(el.querySelector('.genre-label').textContent));
-            });
-        }
-
-        // ============ CREDENTIALS ============
-        let currentCredentials = [];
-
-        function addCredential() {
-            const input = document.getElementById('credentialInput');
-            const v = input.value.trim();
-            if (v && !currentCredentials.includes(v)) { currentCredentials.push(v); renderCredentials(); input.value = ''; }
-            input.focus();
-        }
-
-        function removeCredential(idx) { currentCredentials.splice(idx, 1); renderCredentials(); }
-
-        function renderCredentials() {
-            const container = document.getElementById('credentialsContainer');
-            container.innerHTML = currentCredentials.length === 0
-                ? '<span class="tags-placeholder">No certifications or experience added yet</span>'
-                : currentCredentials.map((c, i) => `<span class="tag">${esc(c)}<button type="button" onclick="removeCredential(${i})"><i class="fas fa-times"></i></button></span>`).join('');
-        }
-
-        function insertBullet() {
-            const ta = document.getElementById('educationDetails');
-            const start = ta.selectionStart;
-            const before = ta.value.substring(0, start);
-            const after = ta.value.substring(start);
-            const bullet = (start === 0 || before.endsWith('\n')) ? '• ' : '\n• ';
-            ta.value = before + bullet + after;
-            ta.selectionStart = ta.selectionEnd = start + bullet.length;
-            ta.focus();
-        }
-
-        // ============ NAVIGATION ============
-        function updateProgress() {
-            document.querySelectorAll('.progress-step').forEach((step, idx) => {
-                const stepNum = idx + 1;
-                step.classList.remove('active', 'completed');
-                if (stepNum === currentStep) step.classList.add('active');
-                else if (stepNum < currentStep) { step.classList.add('completed'); step.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>'; }
-                else step.querySelector('.step-circle').textContent = stepNum;
-            });
-            const fill = document.getElementById('progressBarFill');
-            const totalWidth = document.querySelector('.progress-steps').offsetWidth - 48;
-            fill.style.width = `${((currentStep - 1) / (totalSteps - 1)) * totalWidth}px`;
-        }
-
-        function goToStep(step) {
-            document.querySelectorAll('.step-card').forEach(s => s.classList.remove('active'));
-            document.getElementById(`step${step}`).classList.add('active');
-            currentStep = step;
-            updateProgress();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function nextStep(fromStep) {
-            if (!validateStep(fromStep)) return;
-            if (fromStep === 6) initializeInstrumentDetails();
-            if (fromStep === 7) buildReview();
-            goToStep(fromStep + 1);
-        }
-
-        function prevStep(fromStep) { goToStep(fromStep - 1); }
-
-        // ============ INSTRUMENT FLOW ============
-        function initializeInstrumentDetails() {
-            instruments = selectedInstruments.map(name => ({ instrument: name, instrument_other: '', teacher_level: '', youngest_age_preference: '', selectedGenres: [], year_started: '', credentials: [], notes: '' }));
-            currentInstrumentIndex = 0;
-            loadCurrentInstrument();
-        }
-
-        function loadCurrentInstrument() {
-            const inst = instruments[currentInstrumentIndex];
-            const isOther = inst.instrument === 'Other';
-            document.getElementById('currentInstrumentNum').textContent = currentInstrumentIndex + 1;
-            document.getElementById('totalInstrumentNum').textContent = instruments.length;
-            document.getElementById('instrumentProgressDots').innerHTML = instruments.map((_, i) => {
-                let cls = 'progress-dot';
-                if (i < currentInstrumentIndex) cls += ' completed';
-                else if (i === currentInstrumentIndex) cls += ' active';
-                return `<div class="${cls}"></div>`;
-            }).join('');
-            document.getElementById('currentInstrumentName').textContent = isOther && inst.instrument_other ? inst.instrument_other : inst.instrument;
-            document.getElementById('otherInstrumentGroup').style.display = isOther ? 'block' : 'none';
-            document.getElementById('otherInstrumentName').value = inst.instrument_other || '';
-            document.getElementById('instrumentLevel').value = inst.teacher_level || '';
-            document.getElementById('instrumentYearStarted').value = inst.year_started || '';
-            updateAgeOptions(inst.instrument);
-            document.getElementById('instrumentYoungestAge').value = inst.youngest_age_preference || '';
-            setSelectedGenres(inst.selectedGenres || []);
-            currentCredentials = [...(inst.credentials || [])];
-            renderCredentials();
-            document.getElementById('instrumentNotes').value = inst.notes || '';
-            document.getElementById('instrumentBackBtn').innerHTML = currentInstrumentIndex === 0 ? '<i class="fas fa-arrow-left"></i> Back to Selection' : '<i class="fas fa-arrow-left"></i> Previous';
-            document.getElementById('instrumentNextBtn').innerHTML = currentInstrumentIndex === instruments.length - 1 ? 'Review <i class="fas fa-arrow-right"></i>' : 'Next Instrument <i class="fas fa-arrow-right"></i>';
-        }
-
-        function updateAgeOptions(instrumentName) {
-            const select = document.getElementById('instrumentYoungestAge');
-            const maxAge = PIANO_UKULELE.includes(instrumentName) ? 5 : 7;
-            select.innerHTML = '<option value="">Select age...</option>';
-            for (let a = 3; a <= maxAge; a++) { const opt = document.createElement('option'); opt.value = a; opt.textContent = a; select.appendChild(opt); }
-            const noneOpt = document.createElement('option'); noneOpt.value = 'none'; noneOpt.textContent = 'None of the above'; select.appendChild(noneOpt);
-        }
-
-        function saveCurrentInstrument() {
-            const inst = instruments[currentInstrumentIndex];
-            inst.instrument_other = document.getElementById('otherInstrumentName').value.trim();
-            inst.teacher_level = document.getElementById('instrumentLevel').value;
-            inst.year_started = document.getElementById('instrumentYearStarted').value;
-            inst.youngest_age_preference = document.getElementById('instrumentYoungestAge').value;
-            inst.selectedGenres = getSelectedGenres();
-            inst.credentials = [...currentCredentials];
-            inst.notes = document.getElementById('instrumentNotes').value;
-        }
-
-        function validateCurrentInstrument() {
-            clearErrors();
-            let valid = true;
-            const inst = instruments[currentInstrumentIndex];
-            if (inst.instrument === 'Other' && !document.getElementById('otherInstrumentName').value.trim()) { document.getElementById('otherInstrumentName').classList.add('error'); document.getElementById('otherInstrumentError').classList.add('visible'); valid = false; }
-            if (!document.getElementById('instrumentLevel').value) { document.getElementById('instrumentLevel').classList.add('error'); document.getElementById('instrumentLevelError').classList.add('visible'); valid = false; }
-            if (!document.getElementById('instrumentYearStarted').value) { document.getElementById('instrumentYearStarted').classList.add('error'); document.getElementById('instrumentYearError').classList.add('visible'); valid = false; }
-            if (!document.getElementById('instrumentYoungestAge').value) { document.getElementById('instrumentYoungestAge').classList.add('error'); document.getElementById('instrumentAgeError').classList.add('visible'); valid = false; }
-            if (getSelectedGenres().length === 0) { document.getElementById('genreGrid').classList.add('error'); document.getElementById('genreError').classList.add('visible'); valid = false; }
-            if (currentCredentials.length === 0) { document.getElementById('credentialsContainer').classList.add('error'); document.getElementById('credentialError').classList.add('visible'); valid = false; }
-            if (!valid) showToast('Please fill in all required fields');
-            return valid;
-        }
-
-        function nextInstrument() {
-            if (!validateCurrentInstrument()) return;
-            saveCurrentInstrument();
-            if (currentInstrumentIndex === instruments.length - 1) { buildReview(); goToStep(8); }
-            else { currentInstrumentIndex++; loadCurrentInstrument(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-        }
-
-        function prevInstrument() {
-            saveCurrentInstrument();
-            if (currentInstrumentIndex === 0) goToStep(6);
-            else { currentInstrumentIndex--; loadCurrentInstrument(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-        }
-
-        // ============ VALIDATION ============
-        function validateStep(step) {
-            clearErrors();
-            let valid = true;
-            if (step === 1) {
-                if (!selectedPhotoFile) { document.getElementById('photoUploadArea').classList.add('error'); document.getElementById('photoError').classList.add('visible'); valid = false; }
-                if (!val('firstName')) { showError('firstName', 'firstNameError'); valid = false; }
-                if (!val('lastName')) { showError('lastName', 'lastNameError'); valid = false; }
-                if (!val('brand')) { showError('brand', 'brandError'); valid = false; }
-                if (!val('state')) { showError('state', 'stateError'); valid = false; }
-                if (!val('teacherBio')) { showError('teacherBio', 'bioError'); valid = false; }
-            }
-            if (step === 2) {
-                if (document.getElementById('formalEducation').checked && !val('educationDetails')) { showError('educationDetails', 'educationDetailsError'); valid = false; }
-                if (!val('strength1')) { showError('strength1', 'strength1Error'); valid = false; }
-                if (!val('strength2')) { showError('strength2', 'strength2Error'); valid = false; }
-            }
-            if (step === 4) {
-                if (cities.length === 0) { document.getElementById('citiesCheckboxGrid').classList.add('error'); document.getElementById('citiesError').classList.add('visible'); valid = false; }
-                if (languages.length === 0) { document.getElementById('languagesCheckboxGrid').classList.add('error'); document.getElementById('languagesError').classList.add('visible'); valid = false; }
-            }
-            if (step === 6) {
-                if (selectedInstruments.length === 0) { document.getElementById('instrumentsSelectError').classList.add('visible'); valid = false; }
-            }
-            if (!valid) showToast('Please fill in all required fields');
-            return valid;
-        }
-
-        function val(id) { return document.getElementById(id).value.trim(); }
-        function showError(inputId, errorId) { document.getElementById(inputId).classList.add('error'); document.getElementById(errorId).classList.add('visible'); }
-        function clearErrors() {
-            document.querySelectorAll('.form-input.error,.form-select.error,.form-textarea.error').forEach(el => el.classList.remove('error'));
-            document.querySelectorAll('.form-error.visible').forEach(el => el.classList.remove('visible'));
-            document.querySelectorAll('.tags-container.error,.cred-tags-container.error,.checkbox-grid.error,.photo-upload-area.error').forEach(el => el.classList.remove('error'));
-            document.querySelectorAll('.genre-grid.error').forEach(el => el.classList.remove('error'));
-        }
-
-        function toggleGenderOther() {
-            const genderVal = document.getElementById('gender').value;
-            document.getElementById('genderOtherGroup').style.display = genderVal === 'Other' ? 'block' : 'none';
-            if (genderVal !== 'Other') document.getElementById('genderOther').value = '';
-        }
-
-        function toggleEducationDetails() {
-            const isChecked = document.getElementById('formalEducation').checked;
-            document.getElementById('educationDetailsSection').style.display = isChecked ? 'block' : 'none';
-            if (!isChecked) document.getElementById('educationDetails').value = '';
-        }
-
-        function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-        // ============ REVIEW ============
-        function buildReview() {
-            const genderVal = val('gender');
-            const genderOtherVal = val('genderOther');
-            let genderDisplay = 'Not specified';
-            if (genderVal === 'Other' && genderOtherVal) genderDisplay = genderOtherVal;
-            else if (genderVal) genderDisplay = genderVal;
-
-            const previewSrc = document.getElementById('photoPreview').querySelector('img')?.src || '';
-
-            const html = `
-                <div class="review-section">
-                    <div class="review-section-title">Basic Information</div>
-                    ${selectedPhotoFile ? `
-                    <div class="review-photo-row">
-                        <div class="review-photo-circle">${previewSrc ? `<img src="${previewSrc}" alt="Photo">` : '<i class="fas fa-user"></i>'}</div>
-                        <div class="review-photo-info"><label>Profile Photo</label><p><i class="fas fa-check-circle"></i> Ready to upload</p></div>
-                    </div>` : ''}
-                    <div class="review-grid">
-                        <div class="review-item"><label>Name</label><p>${esc(val('firstName'))} ${esc(val('lastName'))}</p></div>
-                        <div class="review-item"><label>Studio/Brand</label><p>${esc(val('brand'))}</p></div>
-                        <div class="review-item"><label>State</label><p>${esc(val('state'))}</p></div>
-                        <div class="review-item"><label>Gender</label><p>${esc(genderDisplay)}</p></div>
-                        <div class="review-item"><label>Year Started</label><p>${val('yearStarted') || 'Not specified'}</p></div>
-                        <div class="review-item" style="grid-column:1/-1;"><label>Bio</label><p style="line-height:1.6;">${esc(val('teacherBio'))}</p></div>
-                    </div>
-                </div>
-                <div class="review-section">
-                    <div class="review-section-title">Education & Strengths</div>
-                    <div class="review-grid">
-                        <div class="review-item"><label>Formal Education</label><p>${document.getElementById('formalEducation').checked ? 'Yes' : 'No'}</p></div>
-                        ${document.getElementById('formalEducation').checked ? `<div class="review-item" style="grid-column:1/-1;"><label>Education Details</label><p style="white-space:pre-line;">${esc(val('educationDetails'))}</p></div>` : ''}
-                        ${val('strength1') ? `<div class="review-item"><label>Strength 1</label><p>${esc(val('strength1'))}</p></div>` : ''}
-                        ${val('strength2') ? `<div class="review-item"><label>Strength 2</label><p>${esc(val('strength2'))}</p></div>` : ''}
-                        ${val('strength3') ? `<div class="review-item"><label>Strength 3</label><p>${esc(val('strength3'))}</p></div>` : ''}
-                    </div>
-                </div>
-                <div class="review-section">
-                    <div class="review-section-title">Teaching Preferences</div>
-                    <div class="review-grid">
-                        <div class="review-item"><label>Special Needs</label><p>${document.getElementById('specialNeeds').checked ? 'Yes' : 'No'}</p></div>
-                        ${val('additionalNotes') ? `<div class="review-item" style="grid-column:1/-1;"><label>Additional Notes</label><p>${esc(val('additionalNotes'))}</p></div>` : ''}
-                    </div>
-                </div>
-                <div class="review-section">
-                    <div class="review-section-title">Student Learning Needs</div>
-                    <div class="review-grid">
-                        <div class="review-item"><label>Comfort Level</label><p>${val('learningNeedsComfort')} / 10</p></div>
-                    </div>
-                </div>
-                <div class="review-section">
-                    <div class="review-section-title">Locations & Languages</div>
-                    <div class="review-item" style="margin-bottom:0.75rem;"><label>Cities</label><div class="review-tags">${cities.map(c => `<span class="review-tag">${esc(c)}</span>`).join('')}</div></div>
-                    <div class="review-item"><label>Languages</label><div class="review-tags">${languages.map(l => `<span class="review-tag">${esc(l)}</span>`).join('')}</div></div>
-                </div>
-                <div class="review-section">
-                    <div class="review-section-title">Instruments (${instruments.length})</div>
-                    ${instruments.map(inst => {
-                        const instName = inst.instrument === 'Other' ? (inst.instrument_other || 'Other') : inst.instrument;
-                        const ageDisplay = inst.youngest_age_preference === 'none' ? 'N/A' : inst.youngest_age_preference;
-                        return `<div class="review-instrument-card">
-                            <div class="review-instrument-name">${esc(instName)}</div>
-                            <div class="review-grid">
-                                <div class="review-item"><label>Highest Teaching Level</label><p>${esc(inst.teacher_level)}</p></div>
-                                <div class="review-item"><label>Youngest Age</label><p>${esc(ageDisplay)}</p></div>
-                                <div class="review-item"><label>Year Started Teaching</label><p>${esc(inst.year_started)}</p></div>
-                                <div class="review-item" style="grid-column:1/-1;"><label>Genres</label><div class="review-tags">${(inst.selectedGenres||[]).map(g=>`<span class="review-tag">${esc(g)}</span>`).join('')}</div></div>
-                                <div class="review-item" style="grid-column:1/-1;"><label>Certifications & Experience</label><div class="review-tags">${(inst.credentials||[]).map(c=>`<span class="review-tag">${esc(c)}</span>`).join('')}</div></div>
-                                ${inst.notes ? `<div class="review-item" style="grid-column:1/-1;"><label>Notes</label><p>${esc(inst.notes)}</p></div>` : ''}
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>`;
-            document.getElementById('reviewContent').innerHTML = html;
-        }
-
-        // ============ SUBMIT ============
-        async function submitSurvey() {
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-            try {
-                const genderVal = val('gender');
-                const genderOtherVal = val('genderOther');
-                let finalGender = null;
-                if (genderVal === 'Other' && genderOtherVal) finalGender = genderOtherVal;
-                else if (genderVal && genderVal !== 'Other') finalGender = genderVal;
-                else if (genderVal === 'Other') finalGender = 'Other';
-
-                const teacherData = {
-                    first_name: val('firstName'),
-                    last_name: val('lastName'),
-                    brand: val('brand'),
-                    state: val('state'),
-                    gender: finalGender,
-                    year_started_at_studio: val('yearStarted') ? parseInt(val('yearStarted')) : null,
-                    status: 'pending',
-                    formal_music_education: document.getElementById('formalEducation').checked,
-                    formal_education_details: val('educationDetails') || null,
-                    teaching_strength_1: val('strength1') || null,
-                    teaching_strength_2: val('strength2') || null,
-                    teaching_strength_3: val('strength3') || null,
-                    special_needs_willing: document.getElementById('specialNeeds').checked,
-                    learning_needs_comfort: parseInt(val('learningNeedsComfort')),
-                    additional_notes: val('additionalNotes') || null,
-                    bio: val('teacherBio') || null
-                };
-
-                const teacherResult = await supabaseClient.from('teachers').insert([teacherData]).select();
-                if (teacherResult.error) throw teacherResult.error;
-                const teacherId = teacherResult.data[0].id;
-
-                if (selectedPhotoFile) {
-                    try {
-                        const photoUrl = await uploadSurveyPhoto(teacherId);
-                        if (photoUrl) await supabaseClient.from('teachers').update({ photo_url: photoUrl }).eq('id', teacherId);
-                    } catch (photoErr) {
-                        console.error('Photo upload failed:', photoErr);
-                    }
-                }
-
-                if (cities.length > 0) {
-                    const r = await supabaseClient.from('teacher_cities').insert(cities.map((city, i) => ({ teacher_id: teacherId, city, order_index: i })));
-                    if (r.error) throw r.error;
-                }
-
-                if (languages.length > 0) {
-                    const r = await supabaseClient.from('teacher_languages').insert(languages.map((language, i) => ({ teacher_id: teacherId, language, order_index: i })));
-                    if (r.error) throw r.error;
-                }
-
-                const instRows = instruments.map((inst, i) => ({
-                    teacher_id: teacherId,
-                    instrument: inst.instrument === 'Other' ? (inst.instrument_other || 'Other') : inst.instrument,
-                    teacher_level: inst.teacher_level,
-                    youngest_age_preference: inst.youngest_age_preference === 'none' ? null : parseInt(inst.youngest_age_preference),
-                    year_started: parseInt(inst.year_started),
-                    genres: (inst.selectedGenres || []).join(', '),
-                    achievements_credentials: (inst.credentials || []).join(', '),
-                    notes: inst.notes,
-                    order_index: i
-                }));
-                const r = await supabaseClient.from('teacher_instruments').insert(instRows);
-                if (r.error) throw r.error;
-
-                document.querySelectorAll('.step-card').forEach(s => s.classList.remove('active'));
-                document.getElementById('successScreen').classList.add('active');
-                document.querySelectorAll('.progress-step').forEach(s => {
-                    s.classList.remove('active'); s.classList.add('completed');
-                    s.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>';
-                });
-                const fill = document.getElementById('progressBarFill');
-                fill.style.width = `${document.querySelector('.progress-steps').offsetWidth - 48}px`;
-
-            } catch (error) {
-                console.error('Submit error:', error);
-                showToast('Error submitting survey. Please try again.');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-check"></i> Submit Survey';
-            }
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.querySelector('.toast-message').textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3500);
-        }
-    </script>
+/* =========================================================
+   START
+   ========================================================= */
+(async function init(){
+  await loadStudios();
+  const had=restore();
+  refreshStudios();
+  if(!had && !document.querySelectorAll('.inst').length) addInst();
+  syncStrengths(); refreshLangs();
+  showStep(1);
+  attachHelp();
+})();
+</script>
 </body>
 </html>
