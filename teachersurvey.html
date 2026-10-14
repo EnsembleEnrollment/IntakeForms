@@ -112,6 +112,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
 /* ---------- photo ---------- */
 .photo{display:flex;gap:18px;align-items:center}
+.photo>div:last-child{min-width:0;flex:1}
+.photo #photoStatus{overflow-wrap:anywhere}
 .photo .ph{width:76px;height:76px;border-radius:50%;background:var(--ac-grad);flex-shrink:0;
   background-size:cover;background-position:center}
 .photo .pt{font-size:14.5px;font-weight:700;color:var(--strong)}
@@ -263,11 +265,12 @@ button.hb:focus-visible{outline:2px solid var(--ac,#B9892F);outline-offset:2px}
       <div class="photo">
         <div class="ph" id="photoPh"></div>
         <div>
-          <div class="pt">Profile photo <span class="q opt" style="display:inline">(optional)</span></div>
-          <div class="ps">JPG or PNG, up to 5MB</div>
+          <div class="pt">Profile photo <span class="q" id="photoPolicy" style="display:inline">(optional)</span></div>
+          <div class="ps">HEIC, JPEG or PNG, up to 20 MiB</div>
           <button type="button" class="btn" id="photoBtn">Choose a photo</button>
           <button type="button" class="linkdanger" id="photoClear" hidden>Remove</button>
-          <input type="file" id="photoInput" accept="image/png,image/jpeg" hidden>
+          <input type="file" id="photoInput" accept="image/heic,image/heif,image/png,image/jpeg,.heic,.heif" hidden>
+          <p id="photoStatus" role="status" aria-live="polite">Choose a photo from your phone. HEIC, JPEG or PNG, up to 20 MiB. We resize it securely before saving.</p>
         </div>
       </div>
     </div>
@@ -602,6 +605,9 @@ const SUPABASE_URL = 'https://kvyvjwepfrqqkvyyutdw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2eXZqd2VwZnJxcWt2eXl1dGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjgyOTgsImV4cCI6MjA4MjgwNDI5OH0.ZayLxzQCEFENvQ9FwpLm4x2le2Y9kJvSslX8DVRzAh8';
 const SAVE_KEY  = 'teacherSurveyDraft.v2';
 const SUBMIT_FN = 'submit_teacher_survey';   /* SECURITY DEFINER rpc, anon-executable */
+/* Separate owner decision: upload this file with photos OPTIONAL.
+   Change only this false to true after mandatory-photo activation is approved. */
+const PHOTO_REQUIRED = false;
 
 let sb;
 try{ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }catch(e){ console.error(e); }
@@ -629,6 +635,7 @@ const MAX={inst:12,studios:8,langs:10,degrees:6,creds:4,strengths:3,genres:16};
 
 /* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
+$('photoPolicy').textContent=PHOTO_REQUIRED?'(required)':'(optional)';
 const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const val=el=>(el&&el.value||'').trim();
@@ -644,7 +651,9 @@ document.querySelectorAll('input[inputmode=numeric]').forEach(digits);
    ========================================================= */
 let STUDIOS=[];          /* [{id,name,city,brand}] from supabase */
 let BRANDS=[];
-let photoFile=null, photoDataUrl='';
+let photoFile=null, photoDataUrl='', restoredPhotoMissing=false;
+let submitAttempt='', submitFingerprint='';
+const PHOTO_API = (/localhost|127\.0\.0\.1|\.replit\.dev$/.test(location.hostname) ? location.origin : 'https://EnrollmentHub.replit.app') + '/api/intake/teacher-survey';
 let step=1; const LAST=6;
 
 /* =========================================================
@@ -934,15 +943,25 @@ function checkInstNumbers(c){
 $('photoBtn').addEventListener('click',()=>$('photoInput').click());
 $('photoInput').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f) return;
-  if(f.size>5*1024*1024){ alert('That photo is larger than 5MB. Please choose a smaller one.'); return; }
+  if(f.size>20*1024*1024){
+    if(photoDataUrl.startsWith('blob:')) URL.revokeObjectURL(photoDataUrl);
+    photoFile=null; photoDataUrl=''; restoredPhotoMissing=true;
+    $('photoPh').style.backgroundImage=''; $('photoClear').hidden=false;
+    $('photoStatus').textContent='This photo is larger than 20 MiB. Choose a smaller photo. Your answers are kept.';
+    e.target.value=''; save(); return;
+  }
+  if(photoDataUrl.startsWith('blob:')) URL.revokeObjectURL(photoDataUrl);
   photoFile=f;
-  const r=new FileReader();
-  r.onload=()=>{ photoDataUrl=r.result; $('photoPh').style.backgroundImage=`url(${photoDataUrl})`;
-    $('photoClear').hidden=false; save(); };
-  r.readAsDataURL(f);
+  restoredPhotoMissing=false; submitAttempt=''; submitFingerprint='';
+  photoDataUrl=URL.createObjectURL(f);
+  $('photoPh').style.backgroundImage=`url(${photoDataUrl})`;
+  $('photoStatus').textContent='Photo selected—not uploaded yet. We will confirm it is saved when you submit.';
+  $('photoClear').hidden=false; save();
 });
 $('photoClear').addEventListener('click',()=>{
-  photoFile=null; photoDataUrl=''; $('photoPh').style.backgroundImage='';
+  if(photoDataUrl.startsWith('blob:')) URL.revokeObjectURL(photoDataUrl);
+  photoFile=null; photoDataUrl=''; restoredPhotoMissing=false; submitAttempt=''; submitFingerprint=''; $('photoPh').style.backgroundImage='';
+  $('photoStatus').textContent=PHOTO_REQUIRED?'A photo is required. Choose a photo from your phone to finish your submission.':'No photo selected. You can submit without a photo, or choose one.';
   $('photoInput').value=''; $('photoClear').hidden=true; save();
 });
 
@@ -993,7 +1012,7 @@ const firstOf=(row,keys)=>{
 async function loadStudios(){
   let rows;
   try{
-    const {data,error}=await sb.from('studios').select('*');
+    const {data,error}=await sb.from('teacher_survey_studio_choices').select('id,brand_id,brand_name,city,state,display_name');
     if(error) throw error;
     rows=data||[];
     console.log('studios: '+rows.length+' rows; columns: '+
@@ -1004,28 +1023,13 @@ async function loadStudios(){
     return;
   }
 
-  /* brands is optional: without it the form drops to a flat studio list */
-  const brandById={};
-  try{
-    const {data,error}=await sb.from('brands').select('*');
-    if(error) throw error;
-    (data||[]).forEach(b=>{
-      if(b && b.id!=null) brandById[String(b.id)]=firstOf(b,['name','brand_name','title','label']);
-    });
-    console.log('brands: '+Object.keys(brandById).length+' readable');
-  }catch(e){ console.warn('brands not readable, falling back to a flat studio list',e); }
-
-  const retired=r=>r.retired===true||r.is_retired===true||r.archived===true||
-                   r.active===false||r.is_active===false;
-
-  STUDIOS=rows.filter(r=>r && r.id!=null && !retired(r)).map(r=>{
-    const city=firstOf(r,['city','town','location','municipality']);
+  STUDIOS=rows.filter(r=>r && r.id!=null).map(r=>{
+    const city=firstOf(r,['city']);
     return {
       id:r.id,
       city:city,
-      name:firstOf(r,['name','studio_name','location_name','display_name','title','label'])||city,
-      brand:(r.brand_id!=null?brandById[String(r.brand_id)]:null)||
-            firstOf(r,['brand','brand_name'])||null
+      name:firstOf(r,['display_name'])||city,
+      brand:firstOf(r,['brand_name'])||null
     };
   }).filter(s=>s.name||s.city);
 
@@ -1404,7 +1408,7 @@ function save(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
     try{
-      const d=collect(); d._photo=photoDataUrl; d._step=step;
+      const d=collect(); d._photoSelected=Boolean(photoFile)||restoredPhotoMissing; d._step=step;
       localStorage.setItem(SAVE_KEY, JSON.stringify(d));
       const n=$('savedNote'); n.hidden=false; clearTimeout(n._t);
       n._t=setTimeout(()=>{ n.hidden=true; },1600);
@@ -1421,7 +1425,11 @@ function restore(){
   $('fGender').value=d.gender||''; $('pronWrap').hidden=d.gender!=='Other'; $('fPron').value=d.pronouns||'';
   $('fYear').value=d.year_started_at_studio??'';
   $('fBio').value=d.bio||''; $('fAddl').value=d.additional_notes||'';
-  if(d._photo){ photoDataUrl=d._photo; $('photoPh').style.backgroundImage=`url(${photoDataUrl})`; $('photoClear').hidden=false; }
+  if(d._photo||d._photoSelected){
+    restoredPhotoMissing=true; photoFile=null; photoDataUrl='';
+    $('photoClear').hidden=false;
+    $('photoStatus').textContent='Your answers were restored, but your photo file was not. Please choose the photo again before submitting.';
+  }
   if(BRAND_MODE && d.brand){ $('fBrand').value=d.brand; }
   if(!BRAND_MODE || d.brand){ refreshStudios(); (d.studios||[]).forEach(s=>addStudio(s.studio_id)); }
   (d.languages||[]).forEach(addLang);
@@ -1464,7 +1472,7 @@ function buildReview(){
   let h='';
   h+=sec('About you',1,
       row('Name',[d.first_name,d.last_name].filter(Boolean).join(' '))+
-      row('Photo',photoDataUrl?'Added':'')+
+      row('Photo',photoFile?'Selected—not saved yet':restoredPhotoMissing?'Please choose your photo again':PHOTO_REQUIRED?'Required—choose a photo':'None selected (optional)')+
       row('Gender',d.gender==='Other'?d.pronouns:d.gender)+
       row('Year started',d.year_started_at_studio)+
       row('Brand',d.brand)+
@@ -1585,6 +1593,10 @@ function capProblem(rpc){
 $('submitBtn').addEventListener('click',async()=>{
   /* re-run the required checks; the review step can be reached and then edited */
   for(const n of [1,3,4,5]) if(!validateStep(n)){ showStep(n); return; }
+  if(!photoFile && (PHOTO_REQUIRED||restoredPhotoMissing)){
+    $('photoStatus').textContent=restoredPhotoMissing?'Your saved photo preview is not an uploadable file. Please choose the photo again. Your answers are kept.':'A photo is required. Choose a photo from your phone before submitting.';
+    showStep(1); $('photoStatus').scrollIntoView({behavior:'smooth',block:'center'}); return;
+  }
 
   const btn=$('submitBtn'); btn.disabled=true; btn.textContent='Sending…';
   $('errSubmit').hidden=true;
@@ -1592,21 +1604,7 @@ $('submitBtn').addEventListener('click',async()=>{
   try{
     const draft=collect();
 
-    /* photo goes to storage first; the function only stores the url */
-    let photoUrl=null;
-    if(photoFile){
-      try{
-        const ext=(photoFile.name.split('.').pop()||'jpg').toLowerCase();
-        const path=`survey/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
-        const up=await sb.storage.from('teacher-photos').upload(path,photoFile,{upsert:true});
-        if(!up.error){
-          const {data}=sb.storage.from('teacher-photos').getPublicUrl(path);
-          if(data && /^https:\/\//i.test(data.publicUrl||'')) photoUrl=data.publicUrl;
-        }
-      }catch(e){ console.warn('photo upload failed, continuing without it',e); }
-    }
-
-    const payload=toRpc(draft,photoUrl);
+    const payload=toRpc(draft,null);
     const capMsg=capProblem(payload);
     if(capMsg){
       $('errSubmit').hidden=false; $('errSubmit').textContent=capMsg;
@@ -1614,17 +1612,40 @@ $('submitBtn').addEventListener('click',async()=>{
       return;
     }
 
-    const {error}=await sb.rpc(SUBMIT_FN,{payload});
-    if(error) throw error;
+    if(!photoFile){
+      // Deliberately omitted optional photo only. A failed/vanished selection
+      // never enters this branch; it must be reselected or explicitly cleared.
+      const {data,error}=await sb.rpc(SUBMIT_FN,{p_payload:payload});
+      if(error) throw new Error(error.message);
+      if(!data) throw new Error('Our server did not confirm your information was saved.');
+      $('photoStatus').textContent='Information saved. No photo was selected.';
+      try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+      showStep(7); return;
+    }
+    // Flush current answers before a network failure or phone interruption.
+    try{const saved=collect();saved._photoSelected=true;saved._step=step;localStorage.setItem(SAVE_KEY,JSON.stringify(saved));}catch(e){}
+    const fingerprint=JSON.stringify(payload)+'|'+photoFile.name+'|'+photoFile.size+'|'+photoFile.lastModified;
+    if(!submitAttempt||submitFingerprint!==fingerprint){submitAttempt=crypto.randomUUID();submitFingerprint=fingerprint;}
+    const form=new FormData();form.append('payload',JSON.stringify(payload));form.append('file',photoFile);
+    btn.textContent='Uploading and saving…';
+    $('photoStatus').textContent='Uploading and processing your photo. Please keep this page open.';
+    let response;
+    try{ response=await fetch(PHOTO_API,{method:'POST',headers:{'Idempotency-Key':submitAttempt},body:form}); }
+    catch{throw new Error('Our photo service could not be reached. Check your connection, then retry.');}
+    const result=await response.json();
+    if(!response.ok) throw new Error(result.error||'Our photo service could not finish this upload.');
+    if(result.photoStored!==true||!result.teacherId) throw new Error('Our server did not confirm that your photo and information were saved.');
+    $('photoStatus').textContent='Photo and information saved successfully.';
 
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
     showStep(7);
   }catch(e){
     console.error(e);
     $('errSubmit').hidden=false;
-    $('errSubmit').textContent='Sorry — that didn’t send. Please check your connection and try again. '+
-      'If it keeps happening, let your studio director know. ('+(e.message||'unknown error')+')';
-    btn.disabled=false; btn.textContent='Submit my information';
+    $('errSubmit').textContent='We could not confirm your photo and information were saved. This is not your fault. Your answers are kept. '+
+      'Please tap Retry. If it keeps failing, contact your studio director and tell them the photo service failed. Error: '+(e.message||'unknown error');
+    $('photoStatus').textContent='Photo not confirmed saved. Your answers are kept; please retry.';
+    btn.disabled=false; btn.textContent='Retry photo and submit';
   }
 });
 
