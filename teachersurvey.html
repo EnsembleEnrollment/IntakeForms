@@ -1615,7 +1615,7 @@ $('submitBtn').addEventListener('click',async()=>{
     if(!photoFile){
       // Deliberately omitted optional photo only. A failed/vanished selection
       // never enters this branch; it must be reselected or explicitly cleared.
-      const {data,error}=await sb.rpc(SUBMIT_FN,{p_payload:payload});
+      const {data,error}=await sb.rpc(SUBMIT_FN,{payload});
       if(error) throw new Error(error.message);
       if(!data) throw new Error('Our server did not confirm your information was saved.');
       $('photoStatus').textContent='Information saved. No photo was selected.';
