@@ -282,6 +282,9 @@ button.hb:focus-visible{outline:2px solid var(--ac,#B9892F);outline-offset:2px}
         <div class="field"><label class="q" data-help="fLast">Last name <span class="req">*</span></label>
           <input type="text" id="fLast" autocomplete="family-name"></div>
       </div>
+      <div class="field" style="margin-top:14px"><label class="q" data-help="fSay" for="fSay">How do you say your name? <span class="opt">(optional)</span></label>
+        <input type="text" id="fSay" maxlength="60" placeholder="e.g., shi-VAWN">
+        <div class="hint">Type it how it sounds, with the loud part in capitals. For example: Siobhan &rarr; shi-VAWN.</div></div>
       <div class="two">
         <div class="field">
           <label class="q" data-help="fGender">Gender <span class="req">*</span></label>
@@ -690,6 +693,7 @@ const HELP={
   fLast:'Your surname, as you would like it shown on your profile.',
   fGender:'Used only so the enrollment team can answer a family who asks for a teacher of a particular gender. It is never shown publicly. Choose Other to describe yourself in your own words.',
   fPron:'However you would like to be described — for example "Non-binary", "they/them", or anything else you prefer.',
+  fSay:'This helps our team say your name right on the phone. Leave it blank if your name is easy to say.',
   fYear:'The year you first started teaching at this school. A rough guess is fine.',
   fBrand:'The school group you teach for. Choosing it narrows the studio list below.',
   studioInput:'Add every location you teach at. The first one you add is treated as your main studio, so add that one first.',
@@ -1378,6 +1382,7 @@ function collect(){
   return {
     first_name: val($('fFirst')),
     last_name:  val($('fLast')),
+    name_pronunciation: val($('fSay'))||null,
     gender:     $('fGender').value||null,
     pronouns:   val($('fPron'))||null,
     year_started_at_studio: num(val($('fYear'))),
@@ -1421,7 +1426,7 @@ document.addEventListener('change',save);
 function restore(){
   let d; try{ d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return false; }
   if(!d||!d.first_name&&!d.last_name&&!(d.instruments||[]).length) return false;
-  $('fFirst').value=d.first_name||''; $('fLast').value=d.last_name||'';
+  $('fFirst').value=d.first_name||''; $('fLast').value=d.last_name||''; $('fSay').value=d.name_pronunciation||'';
   $('fGender').value=d.gender||''; $('pronWrap').hidden=d.gender!=='Other'; $('fPron').value=d.pronouns||'';
   $('fYear').value=d.year_started_at_studio??'';
   $('fBio').value=d.bio||''; $('fAddl').value=d.additional_notes||'';
@@ -1472,6 +1477,7 @@ function buildReview(){
   let h='';
   h+=sec('About you',1,
       row('Name',[d.first_name,d.last_name].filter(Boolean).join(' '))+
+      row('Say it',d.name_pronunciation)+
       row('Photo',photoFile?'Selected—not saved yet':restoredPhotoMissing?'Please choose your photo again':PHOTO_REQUIRED?'Required—choose a photo':'None selected (optional)')+
       row('Gender',d.gender==='Other'?d.pronouns:d.gender)+
       row('Year started',d.year_started_at_studio)+
@@ -1567,9 +1573,14 @@ function toRpc(d,photoUrl){
       disability_experience:(sn.experience||[]).map(S).filter(Boolean),
       disability_comfort:N(sn.comfort)
     },
-    strength_tags:(d.strength_tags||[]).map(S).filter(Boolean)
+    strength_tags:(d.strength_tags||[]).map(S).filter(Boolean),
+    /* Optional, top level (migration 105). Only sent when filled in, so a blank
+       answer sends exactly what the form sent before. Saved to
+       teacher_edit_profiles, never to the teachers row (which Make reads). */
+    ...(sayIt(d.name_pronunciation)?{name_pronunciation:sayIt(d.name_pronunciation)}:{})
   };
 }
+function sayIt(v){ const t=(v==null?'':String(v)).replace(/\s+/g,' ').trim(); return t?t.slice(0,60):null; }
 
 /* The function rejects an oversized submission outright. Say so in plain
    language here rather than letting a Postgres error reach the teacher. */
